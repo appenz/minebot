@@ -239,6 +239,7 @@ def restockFromChest(bot, itemList):
           count = min(i.count,dn)
           if count > 0:
             depositOneToChest(bot,chest,i,count)
+            time.sleep(0.5)
             dn -= count          
           if dn == 0:
             continue
@@ -251,6 +252,7 @@ def restockFromChest(bot, itemList):
           count = min(i.count,dn)
           if count > 0:
             withdrawOneFromChest(bot,chest,i,count)
+            time.sleep(0.5)
             dn -= count          
           if dn == 0:
             continue

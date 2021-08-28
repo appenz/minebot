@@ -11,6 +11,8 @@ import time
 
 from math import sqrt, atan2, sin, cos
 
+empty_blocks = [ "Water", "Lava", "Air", "Cave Air", "Void Air"]
+
 # Add two vectors
 
 def addVec3(v1,v2):
@@ -77,12 +79,12 @@ def safePlaceBlock(bot,v,dv):
 	b     = bot.blockAt(v)
 	b_gap = bot.blockAt(v_gap)
 
-	if b_gap.displayName != 'Air':
+	if b_gap.displayName not in empty_blocks:
 		print(f'*** error: safePlaceBlock cant place block in space occupied by {b_gap.displayName}.')
 		print(f'  * {b_gap.displayName} @{v_gap.x}/{v_gap.y}/{v_gap.z} against {b.displayName} @{v.x}/{v.y}/{v.z}')
 		return False
 
-	if b.displayName == 'Air':
+	if b.displayName in empty_blocks:
 		print(f'*** error safePlaceBlock cant place against air.')
 		print(f'  * {b_gap.displayName} @{v_gap.x}/{v_gap.y}/{v_gap.z} against {b.displayName} @{v.x}/{v.y}/{v.z}')
 		return False

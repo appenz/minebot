@@ -10,31 +10,50 @@ from blocks import *
 from farming import *
 
 mining_equipment = ["Stone Pickaxe", "Torch", "Bread"]
-ignored_blocks = [ "Torch", "Sign"]
+ignored_blocks = [ "Torch", "Sign", "Air", "Cave Air", "Void Air"]
+needs_iron_pickaxe = ["Gold Ore", "Redstone Ore", "Diamond Ore", "Emerald Ore"]
+needs_diamond_pickaxe = ["Obsidian"]
+
+valuable_blocks = [
+  "Coal Ore",
+  "Copper Ore",
+  "Lapis Lazuli Ore",
+  "Iron Ore",
+	"Gold Ore", 
+	"Redstone Ore", 
+  "Diamond Ore",
+  "Emerald Ore"
+]
 
 miningEquipList= {
   "Bread":2,
   "Stone Pickaxe":3,
+  "Iron Pickaxe":2,
   "Torch": 10,
   "Cobblestone" : 64,
   "Dirt" : 0,
   "Andesite" : 0,
   "Diorite" : 0,
   "Granite" : 0,
+  "Sandstone" : 0,
+  "Sand" : 0,
   "Gravel" : 0,
   "Flint" : 0,
   "Iron Ore" : 0,
   "Gold Ore" : 0,
+  "Copper Ore" : 0,
   "Coal" : 0,
-  "Redstone" : 0,
-  "Lapis" : 0,
+  "Redstone Dust" : 0,
+  "Diamond" : 0,
+  "Lapis Lazuli" : 0,
   "Emerald" : 0,
-  "Sand" : 0,
-  "Sandstone" : 0
+
 }
 
 dangerBlocks = {
 	"Air",
+	"Cave Air",
+	"Void Air",
 	"Lava",
 	"Water"
 }
@@ -47,12 +66,27 @@ fillBlocks = {
 def mineBlock(bot,x,y,z):
 	v = bot.Vec3(x,y,z)
 	b = bot.blockAt(v)
+
 	if b.digTime(274) > 100 and b.displayName not in ignored_blocks:
-		print(f'  mine   ({x},{y},{z}) {b.displayName} t:{b.digTime(274)}')	
-		bot.dig(b)
-		return 1	
+		# Ok, this looks mineable
+		# Try 20 times, in case gravel is dropping down
+		for attempts in range(0,20):
+			#print(f'  mine   ({x},{y},{z}) {b.displayName} t:{b.digTime(274)}')	
+
+			# Check for the right tool
+			if b.displayName in needs_iron_pickaxe:
+				wieldItem(bot,"Iron Pickaxe")
+			else:
+				wieldItem(bot,"Stone Pickaxe")
+
+			# dig out the block
+			bot.dig(b)
+			# Check if successful
+			b = bot.blockAt(v)
+			if b.digTime(274) == 0:				
+				return 1	
 	else:
-		# print(f'  ignore ({x},{y},{z}) {b.displayName}')	
+		#print(f'  ignore ({x},{y},{z}) {b.displayName}')	
 		return 0
 
 
@@ -85,6 +119,43 @@ def areaMine(bot):
 	mineRect(bot,sx,sz,3,sy)
 	mineRect(bot,sx,sz,4,sy)
 
+#
+# Mine a 1-wide path from start to end of height height
+# Assumes the bot is at start
+#
+
+def minePath(bot,start,end,height):
+
+	c = Vec3(start.x, start.y, start.z)
+	d = Vec3( (end.x-start.x)/max(abs(end.x-start.x),1), 0, (end.z-start.z)/max(abs(end.z-start.z),1) )
+
+	while True:
+		
+		if c.x != end.x:
+			c.x += d.x
+		if c.z != end.z:
+			c.z += d.z
+
+		# Check if path is safe
+		bb = bot.blockAt(c.x,c.y-1,c.z)
+		if bb.displayName in dangerBlocks:
+			print(f'  stopping, dangerous block {bb.displayName} ')
+			return False
+
+		# Mine the column
+		for h in range(0,height):
+			mineBlock(bot, c.x,c.y+h,c.z)
+
+		safeWalk(bot,c,0.3)
+
+		# Check if we are done
+		if c.x == end.x and c.z == end.z:
+			print("  side mining complete")
+			return True
+
+#
+# Build a strip mine of a specific height and width and light it up
+#
 
 def stripMine(bot):
 
@@ -137,8 +208,41 @@ def stripMine(bot):
 
 			safeWalk(bot,cursor)
 
-			# Check if safe
+			# mine in front
 
+			for i in range(-w2, w2+1):
+				for j in range(0,height):
+					mined_blocks += mineBlock(bot,cursor.x+i*latx, cursor.y+j, cursor.z+i*latz)
+
+			# check sides for valuable things
+
+			for i in range(-w2-3, w2+4):
+				for j in range(0,height):
+					v = Vec3(cursor.x+i*latx, cursor.y+j, cursor.z+i*latz)
+					b = bot.blockAt(v)
+					if b.displayName in valuable_blocks:
+						print(f'Located {b.displayName}')
+
+						minePath(bot,cursor,Vec3(v.x,cursor.y,v.z),3)
+
+						safeWalk(bot,cursor)
+
+
+			if tic % 8 == 0:
+				# place a torch
+				torch_v = Vec3(cursor.x+(w2)*latx, cursor.y+1, cursor.z+(w2)*latz)
+
+				#print(bot.blockAt(torch_v))
+				if bot.blockAt(torch_v).displayName != "Wall Torch":
+					torch_wall = Vec3(cursor.x+(w2+1)*latx, cursor.y+1, cursor.z+(w2+1)*latz)
+					if bot.blockAt(torch_wall).displayName not in ignored_blocks:	
+						torch_surface = Vec3(-latx, 0, -latz)
+						#print(bot.blockAt(torch_wall))
+						print("  placing torch")
+						wieldItem(bot,"Torch")
+						safePlaceBlock(bot,torch_wall,torch_surface)
+
+			# Check if safe ahead, if not bridge
 			for i in range(-w2, w2+1):
 				v = Vec3(cursor.x+i*latx, cursor.y-1, cursor.z+i*latz)
 				b = bot.blockAt(v)		
@@ -161,25 +265,6 @@ def stripMine(bot):
 
 			if bot.stopActivity == True:
 				continue
-
-			for i in range(-w2, w2+1):
-				for j in range(0,height):
-					wieldItem(bot,"Stone Pickaxe")
-					mined_blocks += mineBlock(bot,cursor.x+i*latx, cursor.y+j, cursor.z+i*latz)
-
-			if tic % 8 == 0:
-				# place a torch
-				torch_v = Vec3(cursor.x+(w2)*latx, cursor.y+1, cursor.z+(w2)*latz)
-
-				#print(bot.blockAt(torch_v))
-				if bot.blockAt(torch_v).displayName != "Wall Torch":
-					torch_wall = Vec3(cursor.x+(w2+1)*latx, cursor.y+1, cursor.z+(w2+1)*latz)
-					if bot.blockAt(torch_wall).displayName != "Air":	
-						torch_surface = Vec3(-latx, 0, -latz)
-						#print(bot.blockAt(torch_wall))
-						print("  placing torch")
-						wieldItem(bot,"Torch")
-						bot.placeBlock(bot.blockAt(torch_wall),torch_surface)
 
 		# Deposit mined materials
 		safeWalk(bot,start)
