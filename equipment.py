@@ -62,7 +62,15 @@ def wieldItem(bot,item):
   if item == None:
     print("error: trying to equip item 'None'.")
     return None
+
   if isinstance(item,str):
+
+    # Check if we need to do this
+    if bot.heldItem:
+      if bot.heldItem.displayName == item:
+        return item
+
+    time.sleep(1)
 
     # convert string to item first
     if bot.inventory.items == []:
@@ -92,7 +100,7 @@ def wieldItem(bot,item):
   try:
     bot.equip(item,"hand")      
   except Exception as e:
-    print("*** wielding item failed.")
+    print("*** wielding item failed.",e)
 
   if bot.heldItem:
     return bot.heldItem.displayName

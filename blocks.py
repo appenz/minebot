@@ -49,7 +49,7 @@ def getViewVector (pitch, yaw):
 	snPitch = sin(pitch)
 	csYaw = cos(yaw)
 	snYaw = sin(yaw)
-	print(f'ViewVector {pitch} / {yaw} -> {-snYaw * csPitch},{snPitch},{-csYaw * csPitch}' )
+	#print(f'ViewVector {pitch} / {yaw} -> {-snYaw * csPitch},{snPitch},{-csYaw * csPitch}' )
 	return Vec3(-snYaw * csPitch, snPitch, -csYaw * csPitch)
 
 #
@@ -64,7 +64,11 @@ def safeWalk(bot,toPosition, radius=1):
 		print('*** error: toPosition has no x coordinate. Not a position vector?')
 		return False
 	try:
-		bot.pathfinder.setGoal(pathfinder.goals.GoalNear(toPosition.x,toPosition.y,toPosition.z,radius))
+		p = bot.pathfinder
+		if p == None:
+			print('  *** error: pathfinder is None in safeWalk.')
+			return False
+		p.setGoal(pathfinder.goals.GoalNear(toPosition.x,toPosition.y,toPosition.z,radius))
 	except Exception as e:
 		print(f'*** error in safeWalk {e}')
 		return False
@@ -125,9 +129,12 @@ def bridgeBlock(bot, v, d):
 	targetYaw = atan2(d.x, d.z)
 	targetPitch = -1.421
 	viewVector = getViewVector(targetPitch, targetYaw)
-	p = bot.entity.position.offset(viewVector.x, viewVector.y, viewVector.z)
+	pos = bot.entity.position
+	if not pos:
+		print("*** error: position is None in bridgeBlock.")
+		return False
+	p = pos.offset(viewVector.x, viewVector.y, viewVector.z)
 	bot.lookAt(p, True)
-	print(f'View Vector ({viewVector.x},{viewVector.y},{viewVector.z}')
 	bot.setControlState('sneak', True)
 	time.sleep(1)	
 	bot.setControlState('back', True)

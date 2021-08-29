@@ -10,9 +10,9 @@ from blocks import *
 from farming import *
 
 mining_equipment = ["Stone Pickaxe", "Torch", "Bread"]
-ignored_blocks = [ "Torch", "Sign", "Air", "Cave Air", "Void Air"]
 needs_iron_pickaxe = ["Gold Ore", "Redstone Ore", "Diamond Ore", "Emerald Ore"]
 needs_diamond_pickaxe = ["Obsidian"]
+needs_shovel = ["Dirt", "Gravel", "Sand"]
 
 valuable_blocks = [
   "Coal Ore",
@@ -25,12 +25,47 @@ valuable_blocks = [
   "Emerald Ore"
 ]
 
+ignored_blocks = [ 
+	"Torch", 
+	"Wall Torch", 
+	"Sign", 
+	"Air", 
+	"Cave Air", 
+	"Void Air",
+	"Chest",
+	"Crafting Table",
+	"Furnace",
+	"Ladder",
+	"Glass"
+]
+
+dangerBlocks = {
+	"Air",
+	"Cave Air",
+	"Void Air",
+	"Lava",
+	"Water"
+}
+
+block_will_drop = [
+	"Gravel",
+	"Sand"
+]
+
+fillBlocks = {
+	"Stone Bricks",
+	"Cobblestone",
+	"Dirt"
+}
+
 miningEquipList= {
   "Bread":2,
-  "Stone Pickaxe":3,
+  "Stone Pickaxe":5,
+  "Stone Shovel":2,
   "Iron Pickaxe":2,
   "Torch": 10,
   "Cobblestone" : 64,
+  "Stone Bricks" : 256,
   "Dirt" : 0,
   "Andesite" : 0,
   "Diorite" : 0,
@@ -50,18 +85,11 @@ miningEquipList= {
 
 }
 
-dangerBlocks = {
-	"Air",
-	"Cave Air",
-	"Void Air",
-	"Lava",
-	"Water"
-}
 
-fillBlocks = {
-	"Cobblestone",
-	"Dirt"
-}
+
+#
+# Mine a block with the right tool
+#
 
 def mineBlock(bot,x,y,z):
 	v = bot.Vec3(x,y,z)
@@ -71,10 +99,15 @@ def mineBlock(bot,x,y,z):
 		# Ok, this looks mineable
 		# Try 20 times, in case gravel is dropping down
 		for attempts in range(0,20):
-			#print(f'  mine   ({x},{y},{z}) {b.displayName} t:{b.digTime(274)}')	
+			print(f'  mine   ({x},{y},{z}) {b.displayName} t:{b.digTime(274)}')	
 
 			# Check for the right tool
-			if b.displayName in needs_iron_pickaxe:
+			if b.displayName in needs_shovel:
+				if invItemCount(bot,"Stone Shovel") > 0:
+					wieldItem(bot,"Stone Shovel")					
+				else:
+					wieldItem(bot,"Stone Pickaxe")		
+			elif b.displayName in needs_iron_pickaxe:
 				wieldItem(bot,"Iron Pickaxe")
 			else:
 				wieldItem(bot,"Stone Pickaxe")
@@ -87,37 +120,8 @@ def mineBlock(bot,x,y,z):
 				return 1	
 	else:
 		#print(f'  ignore ({x},{y},{z}) {b.displayName}')	
-		return 0
+		return 0	
 
-
-def mineRect(bot,sx,sz,r,sy):
-	for x in range(sx,sx+r,1):
-		mineBlock(bot,x,sz+r,sy)		
-	for z in range(sz+r,sz-r,-1):
-		mineBlock(bot,sx+r,z,sy)		
-	for x in range(sx+r,sx-r,-1):
-		mineBlock(bot,x,sz-r,sy)		
-	for z in range(sz-r,sz+r,1):
-		mineBlock(bot,sx-r,z,sy)		
-	for x in range(sx-r,sx,1):
-		mineBlock(bot,x,sz+r,sy)		
-
-# 
-# Mine a rectacgle (without the center)
-# centered around x,z with distance from center of r
-#
-
-def areaMine(bot):
-	#wieldPickaxe(bot)
-	# Get center position
-	sx = int(bot.entity.position.x-1)
-	sy = int(bot.entity.position.y)
-	sz = int(bot.entity.position.z)
-	print("Starting at:",sx,sz)
-	mineRect(bot,sx,sz,1,sy)
-	mineRect(bot,sx,sz,2,sy)
-	mineRect(bot,sx,sz,3,sy)
-	mineRect(bot,sx,sz,4,sy)
 
 #
 # Mine a 1-wide path from start to end of height height
@@ -131,27 +135,127 @@ def minePath(bot,start,end,height):
 
 	while True:
 		
-		if c.x != end.x:
-			c.x += d.x
-		if c.z != end.z:
-			c.z += d.z
-
 		# Check if path is safe
 		bb = bot.blockAt(c.x,c.y-1,c.z)
 		if bb.displayName in dangerBlocks:
 			print(f'  stopping, dangerous block {bb.displayName} ')
 			return False
 
-		# Mine the column
-		for h in range(0,height):
-			mineBlock(bot, c.x,c.y+h,c.z)
+		# Mine the column. May need a few tries due to gravel
+
+		wait_t = 0
+
+		for tries in range(0,30):
+
+			# check if we have gravel or sand. If yes we need to check longer.
+			for h in range(0,height+1):
+				b_name = bot.blockAt(Vec3(c.x,c.y+h,c.z)).displayName
+				if b_name in block_will_drop:
+					wait_t = 1
+					break
+
+			# mine
+			for h in range(0,height):
+				mineBlock(bot, c.x,c.y+h,c.z)
+
+			if wait_t:
+				time.sleep(wait_t)
+
+			for h in range(0,height):
+				b_name = bot.blockAt(Vec3(c.x,c.y+h,c.z)).displayName
+				if b_name not in ignored_blocks:
+					print(f'  block not cleared: {b_name}.')
+					break
+			else:
+				break
+
+		if tries > 30:
+			print("  *** error, can't clear this column.")
+			bot.stopActivity = True
+			return False
 
 		safeWalk(bot,c,0.3)
 
 		# Check if we are done
 		if c.x == end.x and c.z == end.z:
-			print("  side mining complete")
+			#print("  side mining complete")
 			return True
+
+		if c.x != end.x:
+			c.x += d.x
+		if c.z != end.z:
+			c.z += d.z
+
+# 
+# Mine a rectangle of dx times dz, height h around a chest
+#
+
+def areaMine(bot,dx_max,dz_max, height):
+
+	# Determine center
+	start_chest = findClosestBlock(bot,"Chest",xz_radius=3,y_radius=1)
+
+	if not start_chest:
+		print("Can't find starting position. Place chest wiht materials to place the center.")
+		return
+
+	print(f'Mining out area of {2*dx_max+1} x {2*dz_max+1} x {height} blocks.')
+	start = start_chest.position
+	restockFromChest(bot, miningEquipList)
+	eatFood(bot)
+	time.sleep(0.5)
+
+	for dz in range(0,dz_max+1):
+
+		# Check if there is anything to do here
+		todo = False
+		for dx in range(-dx_max,dx_max+1):
+			for h in range(0,height):
+				if bot.blockAt(Vec3(start.x+dx, start.y+h, start.z+dz)).displayName not in ignored_blocks:
+					#print(dx,dz,h,bot.blockAt(Vec3(start.x+dx, start.y+h, start.z+dz)).displayName)
+					todo = True
+					break
+				if bot.blockAt(Vec3(start.x+dx, start.y+h, start.z-dz)).displayName not in ignored_blocks:
+					todo = True
+					break
+			if todo:
+				break
+
+		if not todo:
+			continue
+
+		if not bot.stopActivity:
+
+			print(f'  starting row: +{dz}')
+			row_c = Vec3(start.x,start.y,start.z+dz)
+			safeWalk(bot,row_c,0.3)
+			minePath(bot,row_c,Vec3(row_c.x-dx_max,row_c.y,row_c.z),height)			
+			safeWalk(bot,row_c,0.3)
+			minePath(bot,row_c,Vec3(row_c.x+dx_max,row_c.y,row_c.z),height)			
+
+		if not bot.stopActivity:
+
+			print(f'  starting row: -{dz}')
+			row_c = Vec3(start.x,start.y,start.z-dz)
+			safeWalk(bot,row_c,0.3)
+			minePath(bot,row_c,Vec3(row_c.x-dx_max,row_c.y,row_c.z),height)			
+			safeWalk(bot,row_c,0.3)
+			minePath(bot,row_c,Vec3(row_c.x+dx_max,row_c.y,row_c.z),height)			
+
+		safeWalk(bot,start)
+		time.sleep(1)
+		restockFromChest(bot, miningEquipList)
+		time.sleep(0.5)
+		eatFood(bot)
+		time.sleep(0.5)
+
+		if bot.stopActivity:
+			break
+
+	print("Strip mining ended.")
+	return True
+
+
 
 #
 # Build a strip mine of a specific height and width and light it up
