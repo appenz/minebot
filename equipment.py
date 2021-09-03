@@ -48,6 +48,16 @@ def printInventory(bot):
     bot.chat('empty')
 
 #
+# Check if a specific item is in hand
+#
+
+def checkInHand(bot,item_name):
+  if bot.heldItem.displayName == item_name:
+    return True
+  else:
+    return False
+
+#
 # Equip an Item into the main hand.
 #
 # item can be:
@@ -100,7 +110,7 @@ def wieldItem(bot,item):
   try:
     bot.equip(item,"hand")      
   except Exception as e:
-    print("*** wielding item failed.",e)
+    print("*** wielding item failed. In hand {bot.heldItem.displayName} vs {item.displayName}")
 
   if bot.heldItem:
     return bot.heldItem.displayName
@@ -174,7 +184,8 @@ def depositOneToChest(bot,chest,i,count=None):
     # print("Deposit:",i,count)
     chest.deposit(i.type,None,count)
   except Exception as e:
-    print("*** error while depositing.",e)
+    print(f'*** error depositing {count} of item {i.displayName} ({i.count} in inventory)')
+    return False
   return True
 
 def withdrawOneFromChest(bot,chest,i,count=None):
@@ -184,7 +195,11 @@ def withdrawOneFromChest(bot,chest,i,count=None):
   if not count:
     count = i.count
   print(f'  < {count} x {i.displayName}')
-  chest.withdraw(i.type,None,count)
+  try:
+    chest.withdraw(i.type,None,count)
+  except Exception as e:
+    print(f'*** error withdrawing {count} of item {i.displayName} ({i.count} left)')
+    return False
   return True
 
 # Depost items in chest

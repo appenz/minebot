@@ -136,16 +136,16 @@ def bridgeBlock(bot, v, d):
 	p = pos.offset(viewVector.x, viewVector.y, viewVector.z)
 	bot.lookAt(p, True)
 	bot.setControlState('sneak', True)
-	time.sleep(1)	
+	time.sleep(0.5)	
 	bot.setControlState('back', True)
-	time.sleep(1)
+	time.sleep(0.5)
 	bot.setControlState('back',False)
 	if not safePlaceBlock(bot,v,d):
 		return False
 	
 	safeWalk(bot,Vec3(v.x+0.5,v.y+1,v.z+0.5),0.2)
 	bot.setControlState('sneak',False)
-	time.sleep(1)
+	time.sleep(0.5)
 	return
 
 #

@@ -13,6 +13,7 @@ from equipment import *
 from mine import *
 from chat import *
 from farming import *
+from blocks import *
 
 # Setup and log into server
 
@@ -149,9 +150,25 @@ def onChat(sender, message, this, *rest):
     printInventory(bot)
   if message == 'eat':
     eatFood(bot)
+  if message == 'sleep':
+    bed = findClosestBlock(bot,"White Bed",xz_radius=3,y_radius=1)
+    if not bed:
+      bot.chat('cant find a White Bed nearby (I only use those)')
+      print("*** error, can't find a White Bed nearby")
+    else:
+      #try:
+      bot.sleep(bed)
+      bot.chat('good night!')
+      #except Exception:
+      bot.chat('sleeping failed - is it at night?')
+      print("*** error, can't find a White Bed nearby")
+  if message == 'wake':
+    bot.wake()
+    bot.chat('i woke up!')
   if message == 'yeet':
     # exit the game
     off(bot, 'chat', onChat)
+
 
 def commandSend():
   command = ''

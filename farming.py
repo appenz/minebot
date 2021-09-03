@@ -83,6 +83,8 @@ def doFarming(bot):
 			print("Farming Ended.")
 			return True
 
+		long_break = 0
+
 		# Harvest
 		print("Harvesting:")
 		for t in range(1,21):
@@ -97,6 +99,7 @@ def doFarming(bot):
 				#time.sleep(0.2)
 			else:
 				print('  no more harvestable crops')
+				long_break += 1
 				break
 
 		# Plant
@@ -107,13 +110,19 @@ def doFarming(bot):
 				b = findSoil(bot,start_pos,10)
 				if b and not bot.stopActivity:
 					safeWalk(bot,b.position)
+					if not checkInHand(bot,crop):
+						print(f'Out of seeds of type {crop}.')
+						break
 					print(f'  {crop} ({b.position.x}, {b.position.z})')
 					try:
 						bot.placeBlock(b,up)
 					except Exception as e:
 						print("error while planting:",e)
 				else:
+					print('  no more empty soil')
+					long_break += 1
 					break
+
 		else:
 			print('  no plantable seeds in inventory.')
 
@@ -122,4 +131,9 @@ def doFarming(bot):
 		restockFromChest(bot, farmingEquipList)
 		time.sleep(0.5)
 		eatFood(bot)
-		time.sleep(0.5)
+
+		if long_break < 2:
+			time.sleep(0.5)
+		else:
+			print('  nothing to do, taking a break.')
+			time.sleep(60)

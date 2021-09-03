@@ -36,7 +36,8 @@ ignored_blocks = [
 	"Crafting Table",
 	"Furnace",
 	"Ladder",
-	"Glass"
+	"Glass",
+	"Stone Bricks"
 ]
 
 dangerBlocks = {
@@ -63,7 +64,7 @@ miningEquipList= {
   "Stone Pickaxe":5,
   "Stone Shovel":2,
   "Iron Pickaxe":2,
-  "Torch": 10,
+  "Torch": 5,
   "Cobblestone" : 64,
   "Stone Bricks" : 256,
   "Dirt" : 0,
@@ -228,6 +229,7 @@ def areaMine(bot,dx_max,dz_max, height):
 
 			print(f'  starting row: +{dz}')
 			row_c = Vec3(start.x,start.y,start.z+dz)
+			print(f'walking to {row_c.x} {row_c.y} {row_c.z}')
 			safeWalk(bot,row_c,0.3)
 			minePath(bot,row_c,Vec3(row_c.x-dx_max,row_c.y,row_c.z),height)			
 			safeWalk(bot,row_c,0.3)
@@ -312,11 +314,41 @@ def stripMine(bot):
 
 			safeWalk(bot,cursor)
 
-			# mine in front
+			# --- Old code mine in front
+			#for i in range(-w2, w2+1):
+			#	for j in range(0,height):
+			#		mined_blocks += mineBlock(bot,cursor.x+i*latx, cursor.y+j, cursor.z+i*latz)
+
+			# mine in front - new code
 
 			for i in range(-w2, w2+1):
-				for j in range(0,height):
-					mined_blocks += mineBlock(bot,cursor.x+i*latx, cursor.y+j, cursor.z+i*latz)
+
+				c = Vec3(cursor.x+i*latx, cursor.y, cursor.z+i*latz)
+				# Try 30 up to times to clear the column. Needed for gravel
+				for tries in range(0,30):
+
+					wait_t = None
+					# check if we have gravel or sand. If yes we need to check longer.
+					for h in range(0,height+1):
+						b_name = bot.blockAt(Vec3(c.x,c.y+h,c.z)).displayName
+						if b_name in block_will_drop:
+							wait_t = 1
+							break
+
+					# mine
+					for h in range(0,height):
+						mined_blocks += mineBlock(bot, c.x,c.y+h,c.z)
+
+					if wait_t:
+						time.sleep(wait_t)
+
+					for h in range(0,height):
+						b_name = bot.blockAt(Vec3(c.x,c.y+h,c.z)).displayName
+						if b_name not in ignored_blocks:
+							print(f'  block not cleared: {b_name}.')
+							break
+					else:
+						break
 
 			# check sides for valuable things
 
@@ -358,6 +390,7 @@ def stripMine(bot):
 					for ii in range (0,1):						
 						wieldItemFromList(bot,fillBlocks)
 						bridgeBlock(bot,v_place,d)
+						mined_blocks += 1
 						b = bot.blockAt(v)
 						if b.displayName not in dangerBlocks:
 							continue
