@@ -114,6 +114,11 @@ def onChat(sender, message, this, *rest):
     def doStripMine(task):
       stripMine(bot)
 
+  if message == 'mine5':
+    @AsyncTask(start=True)
+    def doStripMine(task):
+      stripMine(bot,5,5)
+
   if message.startswith('minebox'):
     args = [int(s) for s in message[7:].split() if s.isdigit()]
     if len(args) != 3:
@@ -128,10 +133,24 @@ def onChat(sender, message, this, *rest):
     if args[2] < 2:
       bot.chat(f'Box height must be at least 2, is {args[2]}')
       return
-
     @AsyncTask(start=True)
     def doAreaMine(task):
       areaMine(bot,args[0],args[1],args[2])
+
+  if message.startswith('mineshaft'):
+    args = [int(s) for s in message[9:].split() if s.isdigit()]
+    if len(args) != 2:
+      bot.chat('Minebox needs three arguments: radius and max depth.')
+      return
+    if args[0] < 1:
+      bot.chat(f'Box radius must be at least 1, is {args[0]}')
+      return
+    if args[1] < 1:
+      bot.chat(f'Max depth must be at least 1, is {args[1]}')
+      return
+    @AsyncTask(start=True)
+    def doShaftMine(task):
+      shaftMine(bot,args[0],args[1])
 
 
   if message == 'farm':

@@ -263,10 +263,7 @@ def areaMine(bot,dx_max,dz_max, height):
 # Build a strip mine of a specific height and width and light it up
 #
 
-def stripMine(bot):
-
-	width = 3
-	height = 3
+def stripMine(bot,width=3,heightgit=3):
 
 	# Determine "forward" direction	from chest+torch
 	start_chest = findClosestBlock(bot,"Chest",xz_radius=3,y_radius=1)
@@ -409,6 +406,56 @@ def stripMine(bot):
 		time.sleep(0.5)
 		eatFood(bot)
 		time.sleep(0.5)
+
+#
+# Mine a vertical shaft of N x N down to depth D
+#
+
+def shaftMine(bot,r,min_y):
+
+	# Determine center
+	start_chest = findClosestBlock(bot,"Chest",xz_radius=3,y_radius=1)
+
+	if not start_chest:
+		print("Can't find starting position. Place chest wiht materials to place the center.")
+		return
+
+	print(f'Mining out area of {2*r+1} x {2*r+1} down to depth z={min_y}.')
+	start = start_chest.position
+	restockFromChest(bot, miningEquipList)
+	eatFood(bot)
+	time.sleep(0.5)
+
+	for y in range(start.y-1,min_y,-1):
+
+		print(f'  layer: {y}')
+
+		for dz in range(0,r+1):
+
+			if not bot.stopActivity:
+
+				row_c = Vec3(start.x,y,start.z+dz)
+				print(f'walking to {row_c.x} {row_c.y} {row_c.z}')
+				safeWalk(bot,row_c,1)
+				minePath(bot,row_c,Vec3(row_c.x-r,row_c.y,row_c.z),2)			
+				safeWalk(bot,row_c,1)
+				minePath(bot,row_c,Vec3(row_c.x+r,row_c.y,row_c.z),2)			
+
+			if not bot.stopActivity:
+
+				row_c = Vec3(start.x,y,start.z-dz)
+				safeWalk(bot,row_c,1)
+				minePath(bot,row_c,Vec3(row_c.x-r,row_c.y,row_c.z),2)			
+				safeWalk(bot,row_c,1)
+				minePath(bot,row_c,Vec3(row_c.x+r,row_c.y,row_c.z),2)			
+
+		if bot.stopActivity:
+			break		
+
+	print(f'Shaft mining ended at y={y}.')
+	return True
+
+
 
 
 
