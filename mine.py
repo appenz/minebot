@@ -263,7 +263,7 @@ def areaMine(bot,dx_max,dz_max, height):
 # Build a strip mine of a specific height and width and light it up
 #
 
-def stripMine(bot,width=3,heightgit=3):
+def stripMine(bot,width=3,height=3):
 
 	# Determine "forward" direction	from chest+torch
 	start_chest = findClosestBlock(bot,"Chest",xz_radius=3,y_radius=1)
