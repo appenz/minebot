@@ -1,8 +1,13 @@
-# pybot - A minecraft bot written in Python
+# pybot - A Minecraft bot written in Python using Mineflayer
 
 Functionality of the bot includes:
 - Farming/planting
-- Strip mining including lighting up corridors with torches
+- Mining
+  - Strip mining lighting up corridors with torches
+  - Looking for valuable ores off corridors
+  - Mining large areas for underground rooms
+  - Digging vertical shafts
+  - Can bridge across chasms/lava
 - Following
 
-Built on top of mineflayer with the mineflayer python bridge.
+Built on top of mineflayer with the mineflayer to python bridge.
