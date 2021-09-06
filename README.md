@@ -1,5 +1,15 @@
 # pybot - A Minecraft bot written in Python using Mineflayer
 
+### Authors
+
+Guido Appenzeller, Daniel Appenzeller
+
+### License
+
+Released under Apache 2.0
+
+### Functionality
+
 Functionality of the bot includes:
 - Farming/planting
 - Mining
