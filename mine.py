@@ -5,7 +5,7 @@
 from javascript import require
 Vec3     = require('vec3').Vec3
 
-from equipment import *
+from inventory import *
 from blocks import *
 from farming import *
 
@@ -263,7 +263,7 @@ def areaMine(bot,dx_max,dz_max, height):
 # Build a strip mine of a specific height and width and light it up
 #
 
-def stripMine(bot,width=3,height=3):
+def stripMine(bot,width=3,height=3,valrange=3):
 
 	# Determine "forward" direction	from chest+torch
 	start_chest = findClosestBlock(bot,"Chest",xz_radius=3,y_radius=1)
@@ -349,19 +349,29 @@ def stripMine(bot,width=3,height=3):
 
 			# check sides for valuable things
 
-			for i in range(-w2-3, w2+4):
-				for j in range(0,height):
-					v = Vec3(cursor.x+i*latx, cursor.y+j, cursor.z+i*latz)
+			if valrange > 0:
+				for i in range(-w2-valrange, w2+valrange+1):
+
+					# Check for danger
+					v = Vec3(cursor.x+i*latx, cursor.y-1, cursor.z+i*latz)
 					b = bot.blockAt(v)
-					if b.displayName in valuable_blocks:
-						print(f'Located {b.displayName}')
-
-						minePath(bot,cursor,Vec3(v.x,cursor.y,v.z),3)
-
+					if b.displayName in dangerBlocks:
+						print(f'Danger: {b.displayName}')
 						safeWalk(bot,cursor)
+						break
+
+					for j in range(0,height):
+						v = Vec3(cursor.x+i*latx, cursor.y+j, cursor.z+i*latz)
+						b = bot.blockAt(v)
+						if b.displayName in valuable_blocks:
+							print(f'Located {b.displayName}')
+
+							minePath(bot,cursor,Vec3(v.x,cursor.y,v.z),height)
+
+							safeWalk(bot,cursor)
 
 
-			if tic % 8 == 0:
+			if tic % 7 == 0:
 				# place a torch
 				torch_v = Vec3(cursor.x+(w2)*latx, cursor.y+1, cursor.z+(w2)*latz)
 

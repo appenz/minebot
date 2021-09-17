@@ -91,14 +91,14 @@ def safePlaceBlock(bot,v,dv):
 	if b.displayName in empty_blocks:
 		print(f'*** error safePlaceBlock cant place against air.')
 		print(f'  * {b_gap.displayName} @{v_gap.x}/{v_gap.y}/{v_gap.z} against {b.displayName} @{v.x}/{v.y}/{v.z}')
-		return False
+		# return False
 
 	try:
 		bot.placeBlock(b,dv)
 		return True
 	except Exception as e:
 		print(f'*** error: placing block failed.')
-		print(f'"*** exception: {e}')
+		#print(f'"*** exception: {e}')
 		print(f'  * {b_gap.displayName} @{v_gap.x}/{v_gap.y}/{v_gap.z} against {b.displayName} @{v.x}/{v.y}/{v.z}')
 		return False
 
@@ -173,3 +173,18 @@ def findClosestBlock(bot,target,xz_radius=2,y_radius=1):
 						best_dist = dist
 
 	return best_block
+
+
+def gotoLocation(bot,l):
+	if not l in bot.myLocations:
+		print(f'*** error: cant find location {l}')
+
+	c = bot.myLocations[l]
+	print(f'moving to {l}')
+	safeWalk(bot, Vec3(c[0], c[1], c[2]), 1 )
+	print("done.")
+
+
+
+
+

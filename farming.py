@@ -6,7 +6,7 @@ from javascript import require
 Vec3       = require('vec3').Vec3
 pathfinder = require('mineflayer-pathfinder')
 
-from equipment import *
+from inventory import *
 from blocks import * 
 import time
 
@@ -15,7 +15,6 @@ farming_items = ["Wheat"]
 farming_seeds = ["Wheat Seeds"]
 
 farmingEquipList = {
-  "Bread":2,
   "Wheat Seeds":64,
   "Wheat":0
 }
@@ -38,6 +37,16 @@ def findHarvestable(bot,center,r):
 
 	global farming_blocks
 
+	bot_p = bot.entity.position
+
+	# Check adjacent
+	for dx,dz in [ [-1,0], [1,0], [0,-1], [0,1], [1,1], [1,-1], [-1,1], [-1,-1] ] :
+			v = addVec3(bot_p,Vec3(dx,1,dz))
+			b = bot.blockAt(v)
+			#print(v,b.displayName)
+			if b.displayName in farming_blocks and b.metadata == 7:
+				return b
+
 	# Look for harvestable 
 	for dx in range(-r,r+1):
 		for dz in range(-r,r+1):
@@ -51,6 +60,19 @@ def findHarvestable(bot,center,r):
 def findSoil(bot,center,r):
 
 	global farming_blocks
+
+	bot_p = bot.entity.position
+
+	# Check adjacent
+	for dx,dz in [ [-1,0], [1,0], [0,-1], [0,1], [1,1], [1,-1], [-1,1], [-1,-1] ] :
+			v = addVec3(bot_p,Vec3(dx,0,dz))
+			b = bot.blockAt(v)
+			#print(v,b.displayName)
+			if b.displayName == "Farmland":
+				va = addVec3(bot_p,Vec3(dx,1,dz))
+				ba = bot.blockAt(va)
+				if ba and ba.type == 0:
+					return b
 
 	# Look for harvestable 
 	for dx in range(-r,r+1):
@@ -66,6 +88,8 @@ def findSoil(bot,center,r):
 	return None
 
 def doFarming(bot):
+
+	max_range = 25
 
 	up = Vec3(0, 1, 0)
 
@@ -88,9 +112,9 @@ def doFarming(bot):
 		# Harvest
 		print("Harvesting:")
 		for t in range(1,21):
-			b = findHarvestable(bot,start_pos,10)
+			b = findHarvestable(bot,start_pos,max_range)
 			if b and not bot.stopActivity:
-				safeWalk(bot,b.position)
+				safeWalk(bot,b.position,0.5)
 				print(f'  {b.displayName}  ({b.position.x}, {b.position.z}) ')
 				try:
 					bot.dig(b)
@@ -107,9 +131,9 @@ def doFarming(bot):
 		crop = wieldItemFromList(bot,farming_seeds)
 		if crop:
 			for t in range(1,21):
-				b = findSoil(bot,start_pos,10)
+				b = findSoil(bot,start_pos,max_range)
 				if b and not bot.stopActivity:
-					safeWalk(bot,b.position)
+					safeWalk(bot,addVec3(b.position,Vec3(0,1,0)),0.5)
 					if not checkInHand(bot,crop):
 						print(f'Out of seeds of type {crop}.')
 						break

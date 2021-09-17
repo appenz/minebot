@@ -4,6 +4,7 @@
 
 from blocks import * 
 import time
+import botlib
 
 foodList = [
   "Sweet Berries",
@@ -52,6 +53,10 @@ def printInventory(bot):
 #
 
 def checkInHand(bot,item_name):
+
+  if not bot.heldItem:
+    return False
+
   if bot.heldItem.displayName == item_name:
     return True
   else:
@@ -68,7 +73,7 @@ def checkInHand(bot,item_name):
 # Returns name of the item in hand
 #
 
-def wieldItem(bot,item):
+def wieldItem(bot,item,quiet=False):
   if item == None:
     print("error: trying to equip item 'None'.")
     return None
@@ -101,11 +106,15 @@ def wieldItem(bot,item):
   if bot.heldItem:
     if bot.heldItem.displayName != item.displayName:
       # only do this if we are not holding it already
-      print(f'Switching to {item.displayName}')
+      if not quiet:
+        print(f'Switching to {item.displayName}')
+      pass
     else:
       return bot.heldItem.displayName
   else:
-    print(f'Equipping {item.displayName}')
+    if not quiet:
+      print(f'Equipping {item.displayName}')
+    pass
 
   try:
     bot.equip(item,"hand")      
@@ -250,6 +259,7 @@ def restockFromChest(bot, itemList):
 
   print("Restocking operations:")
 
+  nothing = True
   for name,n_goal in itemList.items():
     n_inv = invItemCount(bot,name)
 
@@ -260,8 +270,9 @@ def restockFromChest(bot, itemList):
       for i in itemList:
         if i.displayName == name:
           count = min(i.count,dn)
-          if count > 0:
+          if count > 0:    
             depositOneToChest(bot,chest,i,count)
+            nothing = False
             time.sleep(0.5)
             dn -= count          
           if dn == 0:
@@ -275,6 +286,7 @@ def restockFromChest(bot, itemList):
           count = min(i.count,dn)
           if count > 0:
             withdrawOneFromChest(bot,chest,i,count)
+            nothing = False
             time.sleep(0.5)
             dn -= count          
           if dn == 0:
@@ -282,9 +294,55 @@ def restockFromChest(bot, itemList):
     else:
       # print(f'{name} {n_inv}/{n_goal}')
       pass
+
+  if nothing:
+    print('  no action taken.')
  
   chest.close()
 
+#
+#  Transfer all of the content of the closest chest, to the target chest
+#
+
+def transferToChest(bot, target):
+
+  chest_block = findClosestBlock(bot,"Chest",2)
+  if chest_block == None:
+    print("Depositing: can't transfer - no chest found")
+    return False
+
+  botlib.startActivity(bot,"Transfer chest contents to "+target)
+
+  while True:
+
+    chest = bot.openChest(chest_block)
+    time.sleep(0.5)
+   
+    print("Taking:")
+
+    slots = 0
+    for i in chest.containerItems():
+      if i.count > 0:
+        #print(f'  taking {i.displayName} {i.count}')
+        withdrawOneFromChest(bot,chest,i,i.count)
+        time.sleep(0.5)
+        slots += 1
+        if slots > 27:
+          break
+   
+    chest.close()
+
+    if slots == 0:
+      print(f'  nothing left')
+      break
+
+    gotoLocation(bot,target)
+
+    depositToChest(bot)
+
+    safeWalk(bot, chest_block.position)
+
+  botlib.stopActivity(bot)
 
 
 

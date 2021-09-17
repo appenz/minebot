@@ -18,9 +18,9 @@ def startActivity(bot,name):
 	global activity_name
 
 	t_str = myTime()
-	print(35*'-')
+	print(60*'-')
 	print(f'   {name:20} ({t_str})')
-	print(35*'-')
+	print(60*'-')
 	activity_start = time.time()
 	activity_name = name
 	bot.stopActivity = False

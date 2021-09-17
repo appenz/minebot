@@ -9,11 +9,12 @@ from javascript import require, On, Once, AsyncTask, once, off
 import time
 
 from account import account
-from equipment import *
+from inventory import *
 from mine import *
 from chat import *
 from farming import *
 from blocks import *
+from build import *
 
 # Setup and log into server
 
@@ -32,6 +33,7 @@ bot.mcData   = require('minecraft-data')(bot.version)
 bot.Block    = require('prismarine-block')(bot.version)
 bot.Vec3     = require('vec3').Vec3
 bot.callsign = account.account_user[0]
+bot.myLocations = account.world_locations
 
 # Setup for the pathfinder plugin
 
@@ -43,6 +45,11 @@ movements.blocksToAvoid.delete(bot.mcData.blocksByName.wheat.id)
 bot.pathfinder.setMovements(movements)
 # How far to be fromt the goal
 RANGE_GOAL = 1
+
+#
+# Init builds
+#
+init_build(bot)
 
 time.sleep(2)
 
@@ -109,15 +116,48 @@ def onChat(sender, message, this, *rest):
         bot.pathfinder.setGoal(pathfinder.goals.GoalFollow(player.entity, RANGE_GOAL))
         time.sleep(2)
 
+  if message.startswith('moveto'):
+    args = message[6:].split()
+    if len(args) != 1:
+      bot.chat('Need name of location to move to.')
+      return
+    @AsyncTask(start=True)
+    def doMoveTo(task):
+      gotoLocation(bot,args[0])
+
+  if message.startswith('transfer to'):
+    args = message[11:].split()
+    if len(args) != 1:
+      bot.chat('Need name of target chest.')
+      return
+    @AsyncTask(start=True)
+    def doTransfer(task):
+      transferToChest(bot,args[0])      
+
+  if message == 'mine3':
+    @AsyncTask(start=True)
+    def doStripMine(task):
+      stripMine(bot,3,3)
+
+  if message == 'tunnel3':
+    @AsyncTask(start=True)
+    def doStripMine(task):
+      stripMine(bot,3,3)
+
   if message == 'mine':
     @AsyncTask(start=True)
     def doStripMine(task):
-      stripMine(bot)
+      stripMine(bot,1,5)
 
   if message == 'mine5':
     @AsyncTask(start=True)
     def doStripMine(task):
       stripMine(bot,5,5)
+
+  if message == 'tunnel5':
+    @AsyncTask(start=True)
+    def doStripMine(task):
+      stripMine(bot,5,5,0)
 
   if message.startswith('minebox'):
     args = [int(s) for s in message[7:].split() if s.isdigit()]
@@ -158,6 +198,20 @@ def onChat(sender, message, this, *rest):
     def doFarmingTask(task):
       doFarming(bot)
  
+  if message == 'analyze':
+    @AsyncTask(start=True)
+    def doAnalyzeBuildTask(task):
+      analyzeBuild(bot)
+
+  if message.startswith('build'):
+    args = message[5:].split()
+    if len(args) != 1:
+      bot.chat('Build needs name of blueprint to build.')
+      return
+    @AsyncTask(start=True)
+    def doBuildTask(task):
+      doBuild(bot,args[0])
+
   if message == 'deposit':
     depositToChest(bot)
 
