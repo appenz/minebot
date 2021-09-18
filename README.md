@@ -1,5 +1,7 @@
 # pybot - A Minecraft bot written in Python using Mineflayer
 
+pybot is a Minecraft bot written using the Mineflayer framework via the Python to Javascript bridge.
+
 ### Authors
 
 Guido Appenzeller, Daniel Appenzeller
@@ -8,10 +10,10 @@ Guido Appenzeller, Daniel Appenzeller
 
 Released under Apache 2.0
 
-### Functionality
+## Functionality
 
-Functionality of the bot includes:
 - Farming/planting
+
 - Mining
   - Strip mining lighting up corridors with torches
   - Looking for valuable ores off corridors
