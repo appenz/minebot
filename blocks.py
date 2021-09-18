@@ -162,7 +162,7 @@ def findClosestBlock(bot,target,xz_radius=2,y_radius=1):
 	for dx in range(-xz_radius,xz_radius+1):
 		for dy in range(-y_radius,y_radius+1):
 			for dz in range(-xz_radius,+xz_radius+1):
-				v = addVec3(bot.entity.position,bot.Vec3(dx,dy,dz))
+				v = addVec3(bot.entity.position,Vec3(dx,dy,dz))
 				b = bot.blockAt(v)
 				#print(v,b.displayName)
 				if b.displayName == target:
