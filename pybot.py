@@ -23,39 +23,39 @@ from build import *
 
 class PyBot(ChatBot, FarmBot):
 
-  def __init__(self,account):
-    # This is the Mineflayer bot
-    self.bot = None
-    self.account = account
-    self.bossPlayer = self.account['master']
-    self.callsign = self.account['user'][0:2]+":"
+    def __init__(self,account):
+        # This is the Mineflayer bot
+        self.bot = None
+        self.account = account
+        self.bossPlayer = self.account['master']
+        self.callsign = self.account['user'][0:2]+":"
 
-    mineflayer = require('mineflayer')
-    bot = mineflayer.createBot(
-      {   
-        'host'    : self.account['host'],
-        'username': self.account['user'],
-        'password': self.account['password'], 
-        'version': self.account['version'],
-        'hideErrors': False,
-      } )
+        mineflayer = require('mineflayer')
+        bot = mineflayer.createBot(
+          {
+            'host'    : self.account['host'],
+            'username': self.account['user'],
+            'password': self.account['password'],
+            'version': self.account['version'],
+            'hideErrors': False,
+          } )
 
-    self.mcData   = require('minecraft-data')(bot.version)
-    self.Block    = require('prismarine-block')(bot.version)
-    self.Vec3     = require('vec3').Vec3
+        self.mcData   = require('minecraft-data')(bot.version)
+        self.Block    = require('prismarine-block')(bot.version)
+        self.Vec3     = require('vec3').Vec3
 
-    # Setup for the pathfinder plugin
-    pathfinder = require('mineflayer-pathfinder')
-    bot.loadPlugin(pathfinder.pathfinder)
-    # Create a new movements class
-    movements = pathfinder.Movements(bot, self.mcData)
-    movements.blocksToAvoid.delete(self.mcData.blocksByName.wheat.id)
-    bot.pathfinder.setMovements(movements)
-    self.bot = bot
+        # Setup for the pathfinder plugin
+        pathfinder = require('mineflayer-pathfinder')
+        bot.loadPlugin(pathfinder.pathfinder)
+        # Create a new movements class
+        movements = pathfinder.Movements(bot, self.mcData)
+        movements.blocksToAvoid.delete(self.mcData.blocksByName.wheat.id)
+        bot.pathfinder.setMovements(movements)
+        self.bot = bot
 
-    # Initialize modules
-    self.init_ChatBot()
-    time.sleep(1)
+        # Initialize modules
+        self.init_ChatBot()
+        time.sleep(1)
 
 # Import credentials and server info, create the bot and log in
 from account import account
@@ -64,7 +64,7 @@ print(f'Connected to server {account.account["host"]}.')
 
 # Import list of known locations. Specific to the world.
 if account.locations:
-      pybot.myLocations = account.locations
+    pybot.myLocations = account.locations
 
 #
 # Init builds
@@ -85,11 +85,10 @@ pybot.sayStatus()
 
 @On(pybot.bot, 'chat')
 def onChat(sender, message, this, *rest):
-  pybot.handleChat(sender, message, this, *rest)
+    pybot.handleChat(sender, message, this, *rest)
 
 print(f'Ready.')
 
-# The spawn event 
+# The spawn event
 once(pybot.bot, 'login')
 pybot.bot.chat('Bot '+pybot.bot.callsign+' joined.')
-

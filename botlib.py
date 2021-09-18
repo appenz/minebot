@@ -6,7 +6,5 @@ import time
 import datetime
 
 def myTime():
-	now = datetime.datetime.now()
-	return now.strftime("%H:%M:%S")
-
-
+    now = datetime.datetime.now()
+    return now.strftime("%H:%M:%S")

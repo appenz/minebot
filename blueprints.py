@@ -8,10 +8,10 @@ Vec3     = require('vec3').Vec3
 # Test Blueprint 1x2x1
 
 bp_test = [
-	[
-		["Torch"],
-		["Cobblestone"],
-	]
+        [
+                ["Torch"],
+                ["Cobblestone"],
+        ]
 ]
 
 # Sorting System
@@ -67,115 +67,95 @@ bp_sorter_2 = [
 ]
 
 def bp_sorter_buildf_1(x,y,z):
-  from build import SpecialBuild
+    from build import SpecialBuild
 
-  # right chest halves place against left
-  if x == 0 and y < 3:
-    s = SpecialBuild()
-    s.block_surface = Vec3(1,0,0)
-    s.block_against = Vec3(-1,y,0)
-    return s
+    # right chest halves place against left
+    if x == 0 and y < 3:
+        s = SpecialBuild()
+        s.block_surface = Vec3(1,0,0)
+        s.block_against = Vec3(-1,y,0)
+        return s
 
 def bp_sorter_buildf_2(x,y,z):
-  from build import SpecialBuild
+    from build import SpecialBuild
 
-  # Redstone repeaters
-  if y== 1 and z == 4:
-    s = SpecialBuild()
-    s.bot_pos = Vec3(x,2,z+1.5)
-    return s
+    # Redstone repeaters
+    if y== 1 and z == 4:
+        s = SpecialBuild()
+        s.bot_pos = Vec3(x,2,z+1.5)
+        return s
 
-  # Hoppers. What a mess.
-  if z == 1:
-    if y == 0:
-      #bottom row
-      if x == 0:
-        s = SpecialBuild()
-        s.bot_pos = Vec3(0,0,2)
-        s.block_against = Vec3(0,0,0)
-        s.block_surface = Vec3(0,0,1)
-        return s
-      if x == 1:
-        s = SpecialBuild()
-        s.bot_pos = Vec3(1,0,2)
-        s.block_against = Vec3(0,0,1)
-        s.block_surface = Vec3(1,0,0)
-        return s
-    if y == 1:
-      #2nd row
-      if x == -1:
-        s = SpecialBuild()
-        s.bot_pos = Vec3(-1,0,2)
-        s.block_against = Vec3(-1,1,0)
-        s.block_surface = Vec3(0,0,1)
-        return s
-      if x == 1:
-        s = SpecialBuild()
-        s.bot_pos = Vec3(0,0,2)
-        return s
-    if y == 2:
-      #3rd row
-      if x == -1:
-        s = SpecialBuild()
-        s.bot_pos = Vec3(-2,0,2)
-        return s
-      if x == 0:
-        s = SpecialBuild()
-        s.bot_pos = Vec3(0,0,2)
-        s.block_against = Vec3(0,2,0)
-        s.block_surface = Vec3(0,0,1)
-        return s
-      if x == 1:
-        s = SpecialBuild()
-        s.bot_pos = Vec3(2,0,2)
-        return s
-    if y == 3:
-      #3rd row
-      if x == -1:
-        s = SpecialBuild()
-        s.bot_pos = Vec3(0,0,2)
-        s.block_against = Vec3(-1,3,2)
-        s.block_surface = Vec3(0,0,-1)
-        return s
-      if x == 0:
-        s = SpecialBuild()
-        s.bot_pos = Vec3(0,0,2)
-        s.block_against = Vec3(0,3,2)
-        s.block_surface = Vec3(0,0,-1)
-        return s
-      if x == 1:
-        s = SpecialBuild()
-        s.bot_pos = Vec3(0,0,2)
-        s.block_against = Vec3(1,3,2)
-        s.block_surface = Vec3(0,0,-1)
-        return s
+    # Hoppers. What a mess.
+    if z == 1:
+        if y == 0:
+            #bottom row
+            if x == 0:
+                s = SpecialBuild()
+                s.bot_pos = Vec3(0,0,2)
+                s.block_against = Vec3(0,0,0)
+                s.block_surface = Vec3(0,0,1)
+                return s
+            if x == 1:
+                s = SpecialBuild()
+                s.bot_pos = Vec3(1,0,2)
+                s.block_against = Vec3(0,0,1)
+                s.block_surface = Vec3(1,0,0)
+                return s
+        if y == 1:
+            #2nd row
+            if x == -1:
+                s = SpecialBuild()
+                s.bot_pos = Vec3(-1,0,2)
+                s.block_against = Vec3(-1,1,0)
+                s.block_surface = Vec3(0,0,1)
+                return s
+            if x == 1:
+                s = SpecialBuild()
+                s.bot_pos = Vec3(0,0,2)
+                return s
+        if y == 2:
+            #3rd row
+            if x == -1:
+                s = SpecialBuild()
+                s.bot_pos = Vec3(-2,0,2)
+                return s
+            if x == 0:
+                s = SpecialBuild()
+                s.bot_pos = Vec3(0,0,2)
+                s.block_against = Vec3(0,2,0)
+                s.block_surface = Vec3(0,0,1)
+                return s
+            if x == 1:
+                s = SpecialBuild()
+                s.bot_pos = Vec3(2,0,2)
+                return s
+        if y == 3:
+            #3rd row
+            if x == -1:
+                s = SpecialBuild()
+                s.bot_pos = Vec3(0,0,2)
+                s.block_against = Vec3(-1,3,2)
+                s.block_surface = Vec3(0,0,-1)
+                return s
+            if x == 0:
+                s = SpecialBuild()
+                s.bot_pos = Vec3(0,0,2)
+                s.block_against = Vec3(0,3,2)
+                s.block_surface = Vec3(0,0,-1)
+                return s
+            if x == 1:
+                s = SpecialBuild()
+                s.bot_pos = Vec3(0,0,2)
+                s.block_against = Vec3(1,3,2)
+                s.block_surface = Vec3(0,0,-1)
+                return s
 
 #
 # Phases of a build are named NAME_1, NAME_2 etc.
 #
 
 def init():
-  import build
-  build.Blueprint("sorter_1",3,4,1,bp_sorter_1,bp_sorter_buildf_1).learn()
-  build.Blueprint("sorter_2",3,4,6,bp_sorter_2,bp_sorter_buildf_2).learn()
-  build.Blueprint("test_1",  1,2,1,bp_test).learn()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    import build
+    build.Blueprint("sorter_1",3,4,1,bp_sorter_1,bp_sorter_buildf_1).learn()
+    build.Blueprint("sorter_2",3,4,6,bp_sorter_2,bp_sorter_buildf_2).learn()
+    build.Blueprint("test_1",  1,2,1,bp_test).learn()
