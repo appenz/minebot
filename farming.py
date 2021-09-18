@@ -101,16 +101,15 @@ class FarmBot:
 		print("Farming started.")
 		restockFromChest(self.bot, self.farmingEquipList)
 
-		while True:
-			if self.stopActivity:
-				print("Farming Ended.")
-				return True
+		while not self.stopActivity:
 
 			long_break = 0
 
 			# Harvest
 			print("Harvesting:")
 			for t in range(1,21):
+				if self.stopActivity:
+					break
 				b = self.findHarvestable(start_pos,max_range)
 				if b and not self.stopActivity:
 					safeWalk(self.bot,b.position,0.5)
@@ -125,17 +124,15 @@ class FarmBot:
 					long_break += 1
 					break
 
-			if self.stopActivity:
-				print("Farming Ended.")
-				return True
-
 			# Plant
 			print("Planting:")
 			crop = wieldItemFromList(self.bot,self.farming_seeds)
 			if crop:
 				for t in range(1,21):
+					if self.stopActivity:
+						break
 					b = self.findSoil(start_pos,max_range)
-					if b and not self.stopActivity:
+					if b:
 						safeWalk(self.bot,addVec3(b.position,Vec3(0,1,0)),0.5)
 						if not checkInHand(self.bot,crop):
 							print(f'Out of seeds of type {crop}.')
@@ -149,7 +146,6 @@ class FarmBot:
 						print('  no more empty soil')
 						long_break += 1
 						break
-
 			else:
 				print('  no plantable seeds in inventory.')
 
@@ -159,12 +155,12 @@ class FarmBot:
 			time.sleep(0.5)
 			eatFood(self.bot)
 
-			if self.stopActivity:
-				print("Farming Ended.")
-				return True
+			if not self.stopActivity:
+				if long_break < 2:
+					time.sleep(0.5)
+				else:
+					print('  nothing to do, taking a break.')
+					time.sleep(60)
 
-			if long_break < 2:
-				time.sleep(0.5)
-			else:
-				print('  nothing to do, taking a break.')
-				time.sleep(60)
+		self.endActivity()
+		return True

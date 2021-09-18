@@ -420,7 +420,7 @@ def doBuild(bot,bp_name):
     eatFood(bot)
     time.sleep(1)
 
-  botlib.stopActivity(bot)
+  self.endActivity()
 
 #
 # Analyze the area in front and print in python format

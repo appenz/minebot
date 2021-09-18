@@ -53,6 +53,10 @@ class PyBot(ChatBot, FarmBot):
     bot.pathfinder.setMovements(movements)
     self.bot = bot
 
+    # Initialize modules
+    self.init_ChatBot()
+    time.sleep(1)
+
 # Import credentials and server info, create the bot and log in
 from account import account
 pybot = PyBot(account.account)
@@ -67,7 +71,7 @@ if account.locations:
 #
 init_build(pybot.bot)
 
-time.sleep(2)
+time.sleep(1)
 
 #
 # Main Loop - We are driven by chat commands
