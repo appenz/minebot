@@ -99,7 +99,7 @@ class FarmBot:
             return False
         start_pos = start_chest.position
         print("Farming started.")
-        restockFromChest(self.bot, self.farmingEquipList)
+        self.restockFromChest(self.farmingEquipList)
 
         while not self.stopActivity:
 
@@ -126,7 +126,7 @@ class FarmBot:
 
             # Plant
             print("Planting:")
-            crop = wieldItemFromList(self.bot,self.farming_seeds)
+            crop = self.wieldItemFromList(self.farming_seeds)
             if crop:
                 for t in range(1,21):
                     if self.stopActivity:
@@ -134,7 +134,7 @@ class FarmBot:
                     b = self.findSoil(start_pos,max_range)
                     if b:
                         safeWalk(self.bot,addVec3(b.position,Vec3(0,1,0)),0.5)
-                        if not checkInHand(self.bot,crop):
+                        if not self.checkInHand(crop):
                             print(f'Out of seeds of type {crop}.')
                             break
                         print(f'  {crop} ({b.position.x}, {b.position.z})')
@@ -151,9 +151,9 @@ class FarmBot:
 
             # Deposit
             safeWalk(self.bot,start_pos)
-            restockFromChest(self.bot, self.farmingEquipList)
+            self.restockFromChest(self.farmingEquipList)
             time.sleep(0.5)
-            eatFood(self.bot)
+            self.eatFood()
 
             if not self.stopActivity:
                 if long_break < 2:

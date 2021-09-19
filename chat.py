@@ -20,14 +20,14 @@ class ChatBot:
         # Command : [function, name, is-this-a-major-activity]
 
         self.commandList = {
-#                       "analyze":      [self.analyzeBuild,     "Analyze building", False],
-#                       "deposit":      [self.depositToChest,   "Deposit all to Chest", False],
+#               "analyze":      [self.analyzeBuild,             "Analyze building", False],
+#               "deposit":      [self.depositToChest,           "Deposit all to Chest", False],
                 "farm":         [self.doFarming,                "Farming", True],
-#                       "eatFood":      [self.eatFood,                  "Eat Something", False],
+#               "eatFood":      [self.eatFood,                  "Eat Something", False],
                 "hello":        [self.sayHello,                 "Say Hello", False],
-#                       "inventory":[self.printInventory,       "List Inventory", False],
+                "inventory":    [self.printInventory,           "List Inventory", False],
                 "stop":         [self.stopThis,                 "Stop all activities", False],
-#                       "status":       [self.sayStatus,                "Report Status", False],
+#               "status":       [self.sayStatus,                "Report Status", False],
         }
 
     def sayStatus(self):
@@ -41,7 +41,7 @@ class ChatBot:
     def startActivity(self, name):
         t_str = botlib.myTime()
         print(60*'-')
-        print(f'   {name:20} ({t_str})')
+        print(f'  {name:47} {t_str}')
         print(60*'-')
         self.activity_start = time.time()
         self.activity_name = name

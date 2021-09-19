@@ -21,7 +21,7 @@ from build import *
 # Additional Methods are added via Mixin inheritance and are in the various modules
 #
 
-class PyBot(ChatBot, FarmBot):
+class PyBot(ChatBot, FarmBot, InventoryManager):
 
     def __init__(self,account):
         # This is the Mineflayer bot
