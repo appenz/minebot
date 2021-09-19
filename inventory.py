@@ -2,9 +2,8 @@
 # Functions to manage inventory and eqipment
 #
 
-from blocks import *
 import time
-import botlib
+from botlib import *
 
 foodList = [
   "Sweet Berries",
@@ -12,6 +11,10 @@ foodList = [
 ]
 
 class InventoryManager:
+
+    def __init__(self):
+        print('inventory ', end='')
+
     def invItemCount(self,item_name):
         if not item_name:
             print("*** error: no item name given for invItemCount().")
@@ -214,7 +217,7 @@ class InventoryManager:
     # - If blacklist is present, do NOT depost those items.
 
     def depositToChest(self, whitelist=[], blacklist=[]):
-        chest_block = findClosestBlock(self.bot,"Chest",2)
+        chest_block = self.findClosestBlock("Chest",2)
         if chest_block == None:
             print("Depositing: can't deposit - no chest found")
             return False
@@ -240,7 +243,7 @@ class InventoryManager:
     # Other items are ignored
 
     def restockFromChest(self, itemList):
-        chest_block = findClosestBlock(self.bot,"Chest",2)
+        chest_block = self.findClosestBlock("Chest",2)
         if chest_block == None:
             print("Depositing: can't restock - no chest found")
             return False
@@ -304,7 +307,7 @@ class InventoryManager:
 
     def transferToChest(self, target):
 
-        chest_block = findClosestBlock(self.bot,"Chest",2)
+        chest_block = self.findClosestBlock("Chest",2)
         if chest_block == None:
             print("Depositing: can't transfer - no chest found")
             return False

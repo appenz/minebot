@@ -3,14 +3,11 @@
 #
 
 from javascript import require
-Vec3     = require('vec3').Vec3
 from dataclasses import dataclass
-
-from inventory import *
-from blocks import *
-from farming import *
+from botlib import *
 import blueprints
-import botlib
+
+Vec3     = require('vec3').Vec3
 
 emptyBlocks = {
   "Air",
@@ -67,6 +64,7 @@ class Blueprint:
         self.xrange = range(-self.width2, self.width2+1)
         self.yrange = range(0,height)
         self.zrange = range(0,depth)
+        
 
     def blockAt(self,v):
         return self.block(v.x,v.y,v.z)

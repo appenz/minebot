@@ -7,7 +7,7 @@ Vec3       = require('vec3').Vec3
 pathfinder = require('mineflayer-pathfinder')
 
 from inventory import *
-from blocks import *
+from botlib import *
 import time
 
 class FarmBot:
@@ -21,12 +21,8 @@ class FarmBot:
       "Wheat":0
     }
 
-    def safeMove(self,x,y,z,r):
-        try:
-            self.bot.pathfinder.setGoal(pathfinder.goals.GoalNear(x,y,z,r))
-        except Exception:
-            print("*** error: safeMove failed.")
-            pass
+    def __init__(self):
+        print('farming ', end='')
 
     #
     # Main farming loop. To start, the bot should be next to a chest, or deposit wont work
@@ -36,64 +32,21 @@ class FarmBot:
     # - harvest ripe crops
     # - deposit in chest
 
-    def findHarvestable(self,center,r):
-
-        bot_p = self.bot.entity.position
-
-        # Check adjacent
-        for dx,dz in [ [-1,0], [1,0], [0,-1], [0,1], [1,1], [1,-1], [-1,1], [-1,-1] ] :
-            v = addVec3(bot_p,Vec3(dx,1,dz))
-            b = self.bot.blockAt(v)
-            #print(v,b.displayName)
-            if b.displayName in self.farming_blocks and b.metadata == 7:
-                return b
-
-        # Look for harvestable
-        for dx in range(-r,r+1):
-            for dz in range(-r,r+1):
-                v = addVec3(center,Vec3(dx,0,dz))
-                b = self.bot.blockAt(v)
-                #print(v,b.displayName)
-                if b.displayName in self.farming_blocks and b.metadata == 7:
-                    return b
-        return None
+    def findHarvestable(self, r):
+        return self.findClosestBlock(self.farming_blocks, r, y_radius=1, metadata=7 )
 
     def findSoil(self,center,r):
-
-        bot_p = self.bot.entity.position
-
-        # Check adjacent
-        for dx,dz in [ [-1,0], [1,0], [0,-1], [0,1], [1,1], [1,-1], [-1,1], [-1,-1] ] :
-            v = addVec3(bot_p,Vec3(dx,0,dz))
-            b = self.bot.blockAt(v)
-            #print(v,b.displayName)
-            if b.displayName == "Farmland":
-                va = addVec3(bot_p,Vec3(dx,1,dz))
-                ba = self.bot.blockAt(va)
-                if ba and ba.type == 0:
-                    return b
-
-        # Look for harvestable
-        for dx in range(-r,r+1):
-            for dz in range(-r,r+1):
-                v = addVec3(center,Vec3(dx,-1,dz))
-                b = self.bot.blockAt(v)
-                #print(v,b.displayName)
-                if b.displayName == "Farmland":
-                    va = addVec3(center,Vec3(dx,0,dz))
-                    ba = self.bot.blockAt(va)
-                    if ba and ba.type == 0:
-                        return b
-        return None
+        return self.findClosestBlock("Farmland", r, y_radius=1, spaceabove=True )
 
     def doFarming(self):
 
+        break_interval = 32
         max_range = 25
 
         up = Vec3(0, 1, 0)
 
         # Setup. Find out chest
-        start_chest = findClosestBlock(self.bot,"Chest",2)
+        start_chest = self.findClosestBlock("Chest",2)
         if not start_chest:
             print("Please start farming near a chest.")
             return False
@@ -101,18 +54,19 @@ class FarmBot:
         print("Farming started.")
         self.restockFromChest(self.farmingEquipList)
 
-        while not self.stopActivity:
+        # Main loop. Keep farming until told to stop.
 
+        while not self.stopActivity:
             long_break = 0
 
             # Harvest
             print("Harvesting:")
-            for t in range(1,21):
+            for t in range(0,break_interval):
                 if self.stopActivity:
                     break
-                b = self.findHarvestable(start_pos,max_range)
+                b = self.findHarvestable(max_range)
                 if b and not self.stopActivity:
-                    safeWalk(self.bot,b.position,0.5)
+                    self.walkToBlock(b)
                     print(f'  {b.displayName}  ({b.position.x}, {b.position.z}) ')
                     try:
                         self.bot.dig(b)
@@ -128,12 +82,12 @@ class FarmBot:
             print("Planting:")
             crop = self.wieldItemFromList(self.farming_seeds)
             if crop:
-                for t in range(1,21):
+                for t in range(0,break_interval):
                     if self.stopActivity:
                         break
                     b = self.findSoil(start_pos,max_range)
                     if b:
-                        safeWalk(self.bot,addVec3(b.position,Vec3(0,1,0)),0.5)
+                        self.walkOnBlock(b)
                         if not self.checkInHand(crop):
                             print(f'Out of seeds of type {crop}.')
                             break
@@ -150,7 +104,7 @@ class FarmBot:
                 print('  no plantable seeds in inventory.')
 
             # Deposit
-            safeWalk(self.bot,start_pos)
+            self.walkTo(start_pos)
             self.restockFromChest(self.farmingEquipList)
             time.sleep(0.5)
             self.eatFood()

@@ -5,9 +5,7 @@
 from javascript import require
 Vec3     = require('vec3').Vec3
 
-from inventory import *
-from blocks import *
-from farming import *
+from botlib import *
 
 mining_equipment = ["Stone Pickaxe", "Torch", "Bread"]
 needs_iron_pickaxe = ["Gold Ore", "Redstone Ore", "Diamond Ore", "Emerald Ore"]

@@ -9,11 +9,11 @@ from javascript import require, On, Once, AsyncTask, once, off
 import time
 
 from inventory import *
-from mine import *
-from chat import *
+from movement import *
 from farming import *
-from blocks import *
+from mine import *
 from build import *
+from chat import *
 
 #
 # Main Bot Class
@@ -21,7 +21,7 @@ from build import *
 # Additional Methods are added via Mixin inheritance and are in the various modules
 #
 
-class PyBot(ChatBot, FarmBot, InventoryManager):
+class PyBot(ChatBot, FarmBot, MovementManager, InventoryManager):
 
     def __init__(self,account):
         # This is the Mineflayer bot
@@ -31,6 +31,9 @@ class PyBot(ChatBot, FarmBot, InventoryManager):
         self.callsign = self.account['user'][0:2]+":"
 
         mineflayer = require('mineflayer')
+
+        print("pybot - a smart minecraft bot by Guido and Daniel Appenzeller.")
+
         bot = mineflayer.createBot(
           {
             'host'    : self.account['host'],
@@ -54,7 +57,14 @@ class PyBot(ChatBot, FarmBot, InventoryManager):
         self.bot = bot
 
         # Initialize modules
-        self.init_ChatBot()
+        # Python makes this hard as __init__ of mixin classes is not called automatically
+
+        classes = PyBot.mro()
+        print('  modules: ', end='')
+        for c in classes[1:]:
+          c.__init__(self)
+        print('')
+
         time.sleep(1)
 
 # Import credentials and server info, create the bot and log in

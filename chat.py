@@ -11,7 +11,8 @@ pathfinder = require('mineflayer-pathfinder')
 
 class ChatBot:
 
-    def init_ChatBot(self):
+    def __init__(self):
+        print('chat ', end='')
         self.stopActivity = True
         self.activity_start = 0
         self.activity_name = "None"
@@ -21,13 +22,16 @@ class ChatBot:
 
         self.commandList = {
 #               "analyze":      [self.analyzeBuild,             "Analyze building", False],
-#               "deposit":      [self.depositToChest,           "Deposit all to Chest", False],
+                "deposit":      [self.depositToChest,           "Deposit all to Chest", False],
                 "farm":         [self.doFarming,                "Farming", True],
-#               "eatFood":      [self.eatFood,                  "Eat Something", False],
+                "eatFood":      [self.eatFood,                  "Eat Something", False],
                 "hello":        [self.sayHello,                 "Say Hello", False],
                 "inventory":    [self.printInventory,           "List Inventory", False],
+                "sleep":        [self.sleepInBed,               "Sleep in a bed", False],
                 "stop":         [self.stopThis,                 "Stop all activities", False],
-#               "status":       [self.sayStatus,                "Report Status", False],
+                "status":       [self.sayStatus,                "Report Status", False],
+                "wake":         [self.wakeUp,                   "Stop sleeping", False],
+                "yeet":         [self.exitGame,                 "Exit the game", False],
         }
 
     def sayStatus(self):
@@ -59,6 +63,26 @@ class ChatBot:
 
     def stopThis(self):
         self.stopActivity = True
+
+    def sleepInBed(self):
+        bed = self.findClosestBlock("White Bed",xz_radius=3,y_radius=1)
+        if not bed:
+            self.bot.chat('cant find a White Bed nearby (I only use those)')
+            print("*** error, can't find a White Bed nearby")
+        else:
+            #try:
+            self.bot.sleep(bed)
+            self.bot.chat('good night!')
+            #except Exception:
+            self.bot.chat('sleeping failed - is it at night?')
+
+    def wakeUp(self):
+            self.bot.wake()
+            self.bot.chat('i woke up!')
+
+    def exitGame(self):
+            # exit the game
+            off(self.bot, 'chat', onChat)
 
     def handleChat(self,sender, message, this, *rest):
 
@@ -215,22 +239,3 @@ class ChatBot:
             def doBuildTask(task):
                 doBuild(self.bot,args[0])
 
-
-        if message == 'sleep':
-            bed = findClosestBlock(self.bot,"White Bed",xz_radius=3,y_radius=1)
-            if not bed:
-                self.bot.chat('cant find a White Bed nearby (I only use those)')
-                print("*** error, can't find a White Bed nearby")
-            else:
-                #try:
-                self.bot.sleep(bed)
-                self.bot.chat('good night!')
-                #except Exception:
-                self.bot.chat('sleeping failed - is it at night?')
-                print("*** error, can't find a White Bed nearby")
-            if message == 'wake':
-                self.bot.wake()
-                self.bot.chat('i woke up!')
-        if message == 'yeet':
-            # exit the game
-            off(self.bot, 'chat', onChat)
