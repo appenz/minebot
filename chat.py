@@ -18,21 +18,26 @@ class ChatBot:
         self.activity_name = "None"
         self.activity_major = False
 
-        # Command : [function, name, is-this-a-major-activity]
+        # Command : [function, name, major activity flag, min_arguments]
 
         self.commandList = {
-#               "analyze":      [self.analyzeBuild,             "Analyze building", False],
-                "deposit":      [self.depositToChest,           "Deposit all to Chest", False],
-                "farm":         [self.doFarming,                "Farming", True],
-                "eatFood":      [self.eatFood,                  "Eat Something", False],
-                "hello":        [self.sayHello,                 "Say Hello", False],
-                "inventory":    [self.printInventory,           "List Inventory", False],
-                "sleep":        [self.sleepInBed,               "Sleep in a bed", False],
-                "stop":         [self.stopThis,                 "Stop all activities", False],
-                "status":       [self.sayStatus,                "Report Status", False],
-                "wake":         [self.wakeUp,                   "Stop sleeping", False],
-                "yeet":         [self.exitGame,                 "Exit the game", False],
+#               "analyze":      [self.analyzeBuild,             "Analyze building",     False, 0],
+                "deposit":      [self.depositToChest,           "Deposit all in chest", False, 0],
+                "farm":         [self.doFarming,                "Farming",              True , 0],
+                "eatFood":      [self.eatFood,                  "Eat Something",        False, 0],
+                "hello":        [self.sayHello,                 "Say Hello",            False, 0],
+                "inventory":    [self.printInventory,           "List Inventory",       False, 0],
+                "mine":         [self.doMining,                 "Mine for resources",   True,  1],
+                "sleep":        [self.sleepInBed,               "Sleep in a bed",       False, 0],
+                "stop":         [self.stopThis,                 "Stop all activities",  False, 0],
+                "status":       [self.sayStatus,                "Report status",        False, 0],
+                "wake":         [self.wakeUp,                   "Stop sleeping",        False, 0],
+                "yeet":         [self.exitGame,                 "Exit the game",        False, 0],
         }
+
+    def chat(self,txt):
+        self.bot.chat(txt)
+        print('  chat: ',txt)
 
     def sayStatus(self):
         print('  level : ',self.bot.experience.level)
@@ -40,7 +45,7 @@ class ChatBot:
         print('  food  : ',int(100*self.bot.food/20),"%")
 
     def sayHello(self):
-        self.bot.chat('hello to you too!')
+        self.chat('hello to you too!')
 
     def startActivity(self, name):
         t_str = botlib.myTime()
@@ -61,24 +66,28 @@ class ChatBot:
         self.bot.stopActivity = True
         self.activity_major = False
 
+    def safeSleep(self,t):
+        for i in range(0,t):
+            time.sleep(1)
+            if self.stopActivity:
+                return False
+        return True
+
     def stopThis(self):
         self.stopActivity = True
 
     def sleepInBed(self):
         bed = self.findClosestBlock("White Bed",xz_radius=3,y_radius=1)
         if not bed:
-            self.bot.chat('cant find a White Bed nearby (I only use those)')
+            self.chat('cant find a White Bed nearby (I only use those)')
             print("*** error, can't find a White Bed nearby")
         else:
-            #try:
             self.bot.sleep(bed)
-            self.bot.chat('good night!')
-            #except Exception:
-            self.bot.chat('sleeping failed - is it at night?')
+            self.chat('good night!')
 
     def wakeUp(self):
             self.bot.wake()
-            self.bot.chat('i woke up!')
+            self.chat('i woke up!')
 
     def exitGame(self):
             # exit the game
@@ -103,6 +112,8 @@ class ChatBot:
         elif sender != self.bossPlayer:
             return
 
+        # Handle standard commands
+
         cmd = message.split()[0]
         args = message.split()[1:]
 
@@ -117,10 +128,18 @@ class ChatBot:
                 self.startActivity(c[1])
                 @AsyncTask(start=True)
                 def asyncActivity(task):
-                    call_function()
+                    if c[3] > 0:
+                        call_function(args)
+                    else:
+                        call_function()
             else:
-                call_function()
+                if c[3] > 0:
+                    call_function(args)
+                else:
+                    call_function()
             return
+
+        # Legacy commands, need to clean up
 
         # come - try to get to the player
         if 'come' in message or 'go' in message:
@@ -129,10 +148,10 @@ class ChatBot:
             elif 'go to' in message:
                 player = self.bot.players[message[6:]]
             else:
-                self.bot.chat("No Clear Target")
+                self.chat("No Clear Target")
             target = player.entity
             if not target:
-                self.bot.chat("I don't see you!")
+                self.chat("I don't see you!")
                 return
             pos = target.position
             self.bot.pathfinder.setGoal(pathfinder.goals.GoalNear(pos.x, pos.y, pos.z, 1))
@@ -143,10 +162,10 @@ class ChatBot:
             elif len(message) > 6:
                 player = self.bot.players[message[7:]]
             else:
-                self.bot.chat("No Clear Target")
+                self.chat("No Clear Target")
             target = player.entity
             if not target:
-                self.bot.chat("I don't see you!")
+                self.chat("I don't see you!")
                 return
             @AsyncTask(start=True)
             def follow(task):
@@ -157,7 +176,7 @@ class ChatBot:
         if message.startswith('moveto'):
             args = message[6:].split()
             if len(args) != 1:
-                self.bot.chat('Need name of location to move to.')
+                self.chat('Need name of location to move to.')
                 return
             @AsyncTask(start=True)
             def doMoveTo(task):
@@ -166,50 +185,25 @@ class ChatBot:
         if message.startswith('transfer to'):
             args = message[11:].split()
             if len(args) != 1:
-                self.bot.chat('Need name of target chest.')
+                self.chat('Need name of target chest.')
                 return
             @AsyncTask(start=True)
             def doTransfer(task):
                 transferToChest(self.bot,args[0])
 
-        if message == 'mine3':
-            @AsyncTask(start=True)
-            def doStripMine(task):
-                stripMine(self.bot,3,3)
-
-        if message == 'tunnel3':
-            @AsyncTask(start=True)
-            def doStripMine(task):
-                stripMine(self.bot,3,3)
-
-        if message == 'mine':
-            @AsyncTask(start=True)
-            def doStripMine(task):
-                stripMine(self.bot,1,5)
-
-        if message == 'mine5':
-            @AsyncTask(start=True)
-            def doStripMine(task):
-                stripMine(self.bot,5,5)
-
-        if message == 'tunnel5':
-            @AsyncTask(start=True)
-            def doStripMine(task):
-                stripMine(self.bot,5,5,0)
-
         if message.startswith('minebox'):
             args = [int(s) for s in message[7:].split() if s.isdigit()]
             if len(args) != 3:
-                self.bot.chat('Minebox needs three arguments: rx, ry and height.')
+                self.chat('Minebox needs three arguments: rx, ry and height.')
                 return
             if args[0] < 1:
-                self.bot.chat(f'Box half lenght in x direction must be at least 1, is {args[0]}')
+                self.chat(f'Box half lenght in x direction must be at least 1, is {args[0]}')
                 return
             if args[1] < 1:
-                self.bot.chat(f'Box half lenght in y direction must be at least 1, is {args[1]}')
+                self.chat(f'Box half lenght in y direction must be at least 1, is {args[1]}')
                 return
             if args[2] < 2:
-                self.bot.chat(f'Box height must be at least 2, is {args[2]}')
+                self.chat(f'Box height must be at least 2, is {args[2]}')
                 return
             @AsyncTask(start=True)
             def doAreaMine(task):
@@ -218,13 +212,13 @@ class ChatBot:
         if message.startswith('mineshaft'):
             args = [int(s) for s in message[9:].split() if s.isdigit()]
             if len(args) != 2:
-                self.bot.chat('Minebox needs three arguments: radius and max depth.')
+                self.chat('Minebox needs three arguments: radius and max depth.')
                 return
             if args[0] < 1:
-                self.bot.chat(f'Box radius must be at least 1, is {args[0]}')
+                self.chat(f'Box radius must be at least 1, is {args[0]}')
                 return
             if args[1] < 1:
-                self.bot.chat(f'Max depth must be at least 1, is {args[1]}')
+                self.chat(f'Max depth must be at least 1, is {args[1]}')
                 return
             @AsyncTask(start=True)
             def doShaftMine(task):
@@ -233,7 +227,7 @@ class ChatBot:
         if message.startswith('build'):
             args = message[5:].split()
             if len(args) != 1:
-                self.bot.chat('Build needs name of blueprint to build.')
+                self.chat('Build needs name of blueprint to build.')
                 return
             @AsyncTask(start=True)
             def doBuildTask(task):

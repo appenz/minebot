@@ -114,7 +114,7 @@ class FarmBot:
                     time.sleep(0.5)
                 else:
                     print('  nothing to do, taking a break.')
-                    time.sleep(60)
+                    self.safeSleep(60)
 
         self.endActivity()
         return True

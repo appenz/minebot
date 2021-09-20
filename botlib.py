@@ -47,7 +47,7 @@ def walkTime(v1,v2):
         print("*** error: v2 in walkTime() is null.")
         return None
     d = distanceVec3(v1,v2)
-    return d/4.1+0.25
+    return d/4.3+0.1
 
 def getViewVector (pitch, yaw):
     csPitch = cos(pitch)

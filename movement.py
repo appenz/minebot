@@ -86,12 +86,12 @@ class MovementManager:
         b     = self.bot.blockAt(v)
         b_gap = self.bot.blockAt(v_gap)
 
-        if b_gap.displayName not in empty_blocks:
+        if b_gap.displayName not in self.empty_blocks:
             print(f'*** error: safePlaceBlock cant place block in space occupied by {b_gap.displayName}.')
             print(f'  * {b_gap.displayName} @{v_gap.x}/{v_gap.y}/{v_gap.z} against {b.displayName} @{v.x}/{v.y}/{v.z}')
             return False
 
-        if b.displayName in empty_blocks:
+        if b.displayName in self.empty_blocks:
             print(f'*** error safePlaceBlock cant place against air.')
             print(f'  * {b_gap.displayName} @{v_gap.x}/{v_gap.y}/{v_gap.z} against {b.displayName} @{v.x}/{v.y}/{v.z}')
             # return False
