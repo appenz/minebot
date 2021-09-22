@@ -5,6 +5,9 @@
 from javascript import require
 Vec3     = require('vec3').Vec3
 
+from blueprint import SpecialBuild, Blueprint
+
+
 # Test Blueprint 1x2x1
 
 bp_test = [
@@ -67,8 +70,6 @@ bp_sorter_2 = [
 ]
 
 def bp_sorter_buildf_1(x,y,z):
-    from build import SpecialBuild
-
     # right chest halves place against left
     if x == 0 and y < 3:
         s = SpecialBuild()
@@ -77,7 +78,6 @@ def bp_sorter_buildf_1(x,y,z):
         return s
 
 def bp_sorter_buildf_2(x,y,z):
-    from build import SpecialBuild
 
     # Redstone repeaters
     if y== 1 and z == 4:
@@ -154,8 +154,7 @@ def bp_sorter_buildf_2(x,y,z):
 # Phases of a build are named NAME_1, NAME_2 etc.
 #
 
-def init():
-    import build
-    build.Blueprint("sorter_1",3,4,1,bp_sorter_1,bp_sorter_buildf_1).learn()
-    build.Blueprint("sorter_2",3,4,6,bp_sorter_2,bp_sorter_buildf_2).learn()
-    build.Blueprint("test_1",  1,2,1,bp_test).learn()
+def init(pybot):
+    pybot.learnBlueprint( Blueprint("sorter_1",3,4,1,bp_sorter_1, bp_sorter_buildf_1) )
+    pybot.learnBlueprint( Blueprint("sorter_2",3,4,6,bp_sorter_2, bp_sorter_buildf_2) ) 
+    pybot.learnBlueprint( Blueprint("test_1",  1,2,1,bp_test,     None)               )

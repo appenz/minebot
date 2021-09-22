@@ -22,9 +22,10 @@ class ChatBot:
 
         self.commandList = {
 #               "analyze":      [self.analyzeBuild,             "Analyze building",     False, 0],
+                "build":        [self.doBuild,                  "Build a blueprint",    True,  1],                
                 "deposit":      [self.depositToChest,           "Deposit all in chest", False, 0],
-                "farm":         [self.doFarming,                "Farming",              True , 0],
                 "eatFood":      [self.eatFood,                  "Eat Something",        False, 0],
+                "farm":         [self.doFarming,                "Farming",              True , 0],
                 "hello":        [self.sayHello,                 "Say Hello",            False, 0],
                 "inventory":    [self.printInventory,           "List Inventory",       False, 0],
                 "mine":         [self.doMining,                 "Mine for resources",   True,  1],
@@ -63,6 +64,7 @@ class ChatBot:
             d_str = str(datetime.timedelta(seconds=int(time.time()-self.activity_start)))
             print(f'Activity {self.activity_name} ended at {t_str} (duration: {d_str})')
             self.bot.clearControlStates('sneak', False)
+            self.eatFood()
         self.bot.stopActivity = True
         self.activity_major = False
 
@@ -223,13 +225,4 @@ class ChatBot:
             @AsyncTask(start=True)
             def doShaftMine(task):
                 shaftMine(self.bot,args[0],args[1])
-
-        if message.startswith('build'):
-            args = message[5:].split()
-            if len(args) != 1:
-                self.chat('Build needs name of blueprint to build.')
-                return
-            @AsyncTask(start=True)
-            def doBuildTask(task):
-                doBuild(self.bot,args[0])
 

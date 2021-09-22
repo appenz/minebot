@@ -61,14 +61,23 @@ def getViewVector (pitch, yaw):
 
 def rectangleBorder(w,h):
 
-    for dx in range(-w,w+1):
-        yield dx,h
-    for dy in range(h-1,-h-1,-1):
-        yield w,dy
-    for dx in range(w-1,-w-1,-1):
-        yield dx,-h
-    for dy in range(-h+1,h):
-        yield -w,dy
+    if w == 0 and h == 0:
+        yield 0,0
+    elif h == 0:
+        for dx in range(-w,w+1):
+            yield dx,0
+    elif w == 0:
+        for dy in range(-h,h+1):
+            yield 0,dy
+    else:
+        for dx in range(-w,w+1):
+            yield dx,h
+        for dy in range(h-1,-h-1,-1):
+            yield w,dy
+        for dx in range(w-1,-w-1,-1):
+            yield dx,-h
+        for dy in range(-h+1,h):
+            yield -w,dy
 
 
 

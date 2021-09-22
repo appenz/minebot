@@ -21,7 +21,7 @@ from chat import *
 # Additional Methods are added via Mixin inheritance and are in the various modules
 #
 
-class PyBot(ChatBot, FarmBot, MineBot, MovementManager, InventoryManager):
+class PyBot(ChatBot, FarmBot, MineBot, BuildBot, MovementManager, InventoryManager):
 
     def __init__(self,account):
         # This is the Mineflayer bot
@@ -29,19 +29,20 @@ class PyBot(ChatBot, FarmBot, MineBot, MovementManager, InventoryManager):
         self.account = account
         self.bossPlayer = self.account['master']
         self.callsign = self.account['user'][0:2]+":"
+        self.debug_lvl = 3
 
         mineflayer = require('mineflayer')
 
         print("pybot - a smart minecraft bot by Guido and Daniel Appenzeller.")
 
         bot = mineflayer.createBot(
-          {
+            {
             'host'    : self.account['host'],
             'username': self.account['user'],
             'password': self.account['password'],
             'version': self.account['version'],
             'hideErrors': False,
-          } )
+            } )
 
         self.mcData   = require('minecraft-data')(bot.version)
         self.Block    = require('prismarine-block')(bot.version)
@@ -62,10 +63,34 @@ class PyBot(ChatBot, FarmBot, MineBot, MovementManager, InventoryManager):
         classes = PyBot.mro()
         print('  modules: ', end='')
         for c in classes[1:]:
-          c.__init__(self)
+            c.__init__(self)
         print('')
 
         time.sleep(1)
+
+    # Debug levels: 
+    #   0=serious error
+    #   1=important info or warning 
+    #   2=major actions or events
+    #   3=each action, ~1/second
+    #   4=spam me!
+    #   5=everything
+
+    def perror(self, message):
+        print(f'*** error: {message}')
+
+    def pexception(self, message,e):
+        print(f'*** exception: {message}')
+        if self.debug_lvl >= 4:
+            print(e)
+
+    def pinfo(self, message):
+        if self.debug_lvl > 0:
+            print(message)
+
+    def pdebug(self,message,lvl=4):
+        if self.debug_lvl >= lvl:
+            print(message)
 
 # Import credentials and server info, create the bot and log in
 from account import account
@@ -75,13 +100,6 @@ print(f'Connected to server {account.account["host"]}.')
 # Import list of known locations. Specific to the world.
 if account.locations:
     pybot.myLocations = account.locations
-
-#
-# Init builds
-#
-init_build(pybot.bot)
-
-time.sleep(1)
 
 #
 # Main Loop - We are driven by chat commands
@@ -97,6 +115,8 @@ pybot.sayStatus()
 def onChat(sender, message, this, *rest):
     pybot.handleChat(sender, message, this, *rest)
 
+if pybot.debug_lvl >= 4:
+    pybot.printInventory()
 print(f'Ready.')
 
 # The spawn event

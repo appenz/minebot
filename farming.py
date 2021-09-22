@@ -42,17 +42,16 @@ class FarmBot:
 
         break_interval = 32
         max_range = 25
-
         up = Vec3(0, 1, 0)
 
-        # Setup. Find out chest
-        start_chest = self.findClosestBlock("Chest",2)
-        if not start_chest:
-            print("Please start farming near a chest.")
+        # Setup. Find the chest and restock
+        start_chest = Chest(self)
+        if not start_chest.block:
+            self.perror('Please start farming near a chest.')
             return False
-        start_pos = start_chest.position
-        print("Farming started.")
-        self.restockFromChest(self.farmingEquipList)
+        start_pos = start_chest.block.position
+        start_chest.restock(self.farmingEquipList)
+        start_chest.close()
 
         # Main loop. Keep farming until told to stop.
 
@@ -60,21 +59,21 @@ class FarmBot:
             long_break = 0
 
             # Harvest
-            print("Harvesting:")
+            self.pdebug(f'Harvesting.',2)
             for t in range(0,break_interval):
                 if self.stopActivity:
                     break
                 b = self.findHarvestable(max_range)
                 if b and not self.stopActivity:
                     self.walkToBlock(b)
-                    print(f'  {b.displayName}  ({b.position.x}, {b.position.z}) ')
+                    self.pdebug(f'  {b.displayName}  ({b.position.x}, {b.position.z}) ',3)
                     try:
                         self.bot.dig(b)
                     except Exception as e:
-                        print("error while harvesting:",e)
+                        self.pexception("error while harvesting:",e)
                     #time.sleep(0.2)
                 else:
-                    print('  no more harvestable crops')
+                    self.pdebug('  no more harvestable crops',2)
                     long_break += 1
                     break
 
@@ -89,23 +88,24 @@ class FarmBot:
                     if b:
                         self.walkOnBlock(b)
                         if not self.checkInHand(crop):
-                            print(f'Out of seeds of type {crop}.')
+                            self.pdebug(f'Out of seeds of type {crop}.',2)
                             break
-                        print(f'  {crop} ({b.position.x}, {b.position.z})')
+                        self.pdebug(f'  {crop} ({b.position.x}, {b.position.z})',3)
                         try:
                             self.bot.placeBlock(b,up)
                         except Exception as e:
-                            print("error while planting:",e)
+                            self.pexception("error while planting:",e)
                     else:
-                        print('  no more empty soil')
+                        self.pdebug('  no more empty soil',3)
                         long_break += 1
                         break
             else:
-                print('  no plantable seeds in inventory.')
+                self.pdebug('  no plantable seeds in inventory.',2)
 
             # Deposit
             self.walkTo(start_pos)
-            self.restockFromChest(self.farmingEquipList)
+            start_chest.restock(self.farmingEquipList)
+            start_chest.close()
             time.sleep(0.5)
             self.eatFood()
 
@@ -113,7 +113,7 @@ class FarmBot:
                 if long_break < 2:
                     time.sleep(0.5)
                 else:
-                    print('  nothing to do, taking a break.')
+                    self.pdebug('Nothing to do, taking a break.',2)
                     self.safeSleep(60)
 
         self.endActivity()

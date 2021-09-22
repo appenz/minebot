@@ -162,7 +162,7 @@ class MovementManager:
 
         # Search larger and larger rectangles
 
-        for r in range(1,xz_radius+1):
+        for r in range(0,xz_radius+1):
             for dx, dz in rectangleBorder(r,r):
                 for dy in range(-y_radius,y_radius+1):
                         b = self.bot.blockAt(Vec3(p.x+dx,p.y+dy,p.z+dz))
