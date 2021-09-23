@@ -14,6 +14,7 @@ from farming import *
 from mine import *
 from build import *
 from chat import *
+from combat import *
 
 #
 # Main Bot Class
@@ -21,7 +22,7 @@ from chat import *
 # Additional Methods are added via Mixin inheritance and are in the various modules
 #
 
-class PyBot(ChatBot, FarmBot, MineBot, BuildBot, MovementManager, InventoryManager):
+class PyBot(ChatBot, FarmBot, MineBot, BuildBot, CombatBot, MovementManager, InventoryManager):
 
     def __init__(self,account):
         # This is the Mineflayer bot
@@ -29,7 +30,7 @@ class PyBot(ChatBot, FarmBot, MineBot, BuildBot, MovementManager, InventoryManag
         self.account = account
         self.bossPlayer = self.account['master']
         self.callsign = self.account['user'][0:2]+":"
-        self.debug_lvl = 5
+        self.debug_lvl = 3
 
         mineflayer = require('mineflayer')
 
@@ -113,6 +114,12 @@ pybot.sayStatus()
 @On(pybot.bot, 'chat')
 def onChat(sender, message, this, *rest):
     pybot.handleChat(sender, message, this, *rest)
+
+@On(pybot.bot, 'health')
+def onHealth(arg):
+    pybot.healthCheck()
+
+pybot.healToFull()
 
 if pybot.debug_lvl >= 4:
     pybot.printInventory()

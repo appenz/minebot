@@ -328,7 +328,7 @@ class InventoryManager:
 
     def eatFood(self):
         # Check if hungry
-        if self.bot.food > 16:
+        if self.bot.food > 18:
             return
 
         # Wield food in hand
@@ -378,129 +378,58 @@ class InventoryManager:
             return False
         return True
 
+    #
     # Depost items in chest
     # - If whitelist is present, only deposit those items. Otherwise everything.
     # - If blacklist is present, do NOT depost those items.
 
     def depositToChest(self, whitelist=[], blacklist=[]):
         chest = Chest(self)
-        if not chest.block:
-            self.perror('Cant find a chest.')
-            return False
-
-        chest.open()
-        chest_empty_slots = chest.spaceAvailable()
-        self.pdebug(f'Depositing all items ({chest_empty_slots}/{chest.chestObj.inventoryStart} free):',2)
-        itemList = self.bot.inventory.items()
-        for i in itemList:
-            if whitelist != [] and i.displayName not in whitelist:
-                continue
-            elif blacklist != [] and i.displayName in blacklist:
-                continue
-            chest.depositItem(i)
-        chest.close()
+        start_chest.deposit(whitelist,blacklist)
+        start_chest.close()
 
     #
-    # For any item on <itemList> make sure you have the right amount
-    # - If too many, deposit
-    # - If too few, take
-    # Other items are ignored
+    # Find closest chest and restock from it according to the list
+    #
 
     def restockFromChest(self, itemList):
-        chest_block = self.findClosestBlock("Chest",2)
-        if chest_block == None:
-            print("Depositing: can't restock - no chest found")
-            return False
-
-        chest = self.bot.openChest(chest_block)
-        time.sleep(0.5)
-
-        print("Restocking goals:")
-
-        for name,n_goal in itemList.items():
-            n_inv = self.invItemCount(name)
-            if n_goal > 0:
-                print(f'  {name} {n_inv}/{n_goal}')
-
-        print("Restocking operations:")
-
-        nothing = True
-        for name,n_goal in itemList.items():
-            n_inv = self.invItemCount(name)
-
-            if n_inv > n_goal:
-                # deposit
-                dn = n_inv-n_goal
-                itemList = self.bot.inventory.items()
-                for i in itemList:
-                    if i.displayName == name:
-                        count = min(i.count,dn)
-                        if count > 0:
-                            self.depositOneToChest(chest,i,count)
-                            nothing = False
-                            time.sleep(0.5)
-                            dn -= count
-                        if dn == 0:
-                            continue
-            elif n_goal > n_inv:
-                # withdraw
-                dn = n_goal-n_inv
-
-                for i in chest.containerItems():
-                    if i.displayName == name:
-                        count = min(i.count,dn)
-                        if count > 0:
-                            self.withdrawOneFromChest(chest,i,count)
-                            nothing = False
-                            time.sleep(0.5)
-                            dn -= count
-                        if dn == 0:
-                            continue
-            else:
-                # print(f'{name} {n_inv}/{n_goal}')
-                pass
-
-        if nothing:
-            print('  no action taken.')
-
-        chest.close()
+        chest = Chest(self)
+        start_chest.restock(itemList)
+        start_chest.close()
 
     #
-    #  Transfer all of the content of the closest chest, to the target chest
+    #  Transfer all of the content of the closest chest, to the destination chest
     #
 
     def transferToChest(self, target):
 
-        chest_block = self.findClosestBlock("Chest",2)
-        if chest_block == None:
-            print("Depositing: can't transfer - no chest found")
+        c1 = Chest(self)
+        if c1.block == None:
+            self.perror("Can't transfer chest contents - no chest found near starting point")
             return False
 
         self.startActivity("Transfer chest contents to "+target)
 
         while not self.stopActivity:
 
-            chest = self.bot.openChest(chest_block)
-            time.sleep(0.5)
-
-            print("Taking:")
-
+            # Pick up from the source chest
+            c1.open()
+            self.pdebug("Taking:",3)
             slots = 0
-            for i in chest.containerItems():
+            for i in c1.chestObj.containerItems():
                 if i.count > 0:
-                    #print(f'  taking {i.displayName} {i.count}')
-                    self.withdrawOneFromChest(chest,i,i.count)
-                    time.sleep(0.5)
+                    c1.withdrawItem(i,i.count)
+                    time.sleep(0.2)
                     slots += 1
                     if slots > 27:
                         break
-
-            chest.close()
+            c1.close()
 
             if slots == 0:
                 print(f'  nothing left')
                 break
 
+            # Drop all into the destination chest
             self.gotoLocation(target)
             self.depositToChest()
             self.safeWalk(chest_block.position)

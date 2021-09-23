@@ -21,7 +21,7 @@ class workArea:
         self.pybot = pybot
 
         if width % 2 != 1:
-            print(f'Error: width={width} but only odd width blueprints are supported.')
+            print(f'Error: width={width} but only odd width work areas are supported.')
             return None
 
         self.width = width
