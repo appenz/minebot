@@ -354,7 +354,10 @@ class MineBot:
                 # check sides for valuable things
 
                 if valrange > 0:
-                    for i in range(-w2-valrange, w2+valrange+1):
+                    h_max = 1
+                    v_max = None
+
+                    for i in range(0, w2+valrange+1):
 
                         # Check for danger
                         v = Vec3(cursor.x+i*latx, cursor.y-1, cursor.z+i*latz)
@@ -368,9 +371,42 @@ class MineBot:
                             v = Vec3(cursor.x+i*latx, cursor.y+j, cursor.z+i*latz)
                             b = self.bot.blockAt(v)
                             if b.displayName in self.valuable_blocks:
-                                print(f'Located {b.displayName}')
-                                self.minePath(cursor,Vec3(v.x,cursor.y,v.z),height)
-                                self.safeWalk(cursor)
+                                found = True
+                                if j > h_max:
+                                    h_max = j
+                                v_max = v
+                                self.pdebug(f'  located {b.displayName}')
+                        
+                    if v_max:
+                        self.minePath(cursor,Vec3(v_max.x,cursor.y,v_max.z),h_max+1)
+                        self.safeWalk(cursor)
+
+                    h_max = 2
+                    v_max = None
+
+                    for i in range(0, -w2-valrange-1, -1):
+
+                        # Check for danger
+                        v = Vec3(cursor.x+i*latx, cursor.y-1, cursor.z+i*latz)
+                        b = self.bot.blockAt(v)
+                        if b.displayName in self.dangerBlocks:
+                            print(f'Danger: {b.displayName}')
+                            self.safeWalk(cursor)
+                            break
+
+                        for j in range(0,height):
+                            v = Vec3(cursor.x+i*latx, cursor.y+j, cursor.z+i*latz)
+                            b = self.bot.blockAt(v)
+                            if b.displayName in self.valuable_blocks:
+                                found = True
+                                if j > h_max:
+                                    h_max = j
+                                v_max = v
+                                self.pdebug(f'  located {b.displayName}')
+                        
+                    if v_max:
+                        self.minePath(cursor,Vec3(v_max.x,cursor.y,v_max.z),h_max+1)
+                        self.safeWalk(cursor)
 
 
                 if tic % 7 == 0:
@@ -397,16 +433,16 @@ class MineBot:
                         v_place = Vec3(cursor.x+i*latx-d.x, cursor.y-1-d.y, cursor.z+i*latz-d.z)
                         # Try three times.
                         for ii in range (0,1):
-                            wieldItemFromList(bot,self.fillBlocks)
-                            bridgeBlock(bot,v_place,d)
+                            self.wieldItemFromList(self.fillBlocks)
+                            self.bridgeBlock(v_place,d)
                             mined_blocks += 1
-                            b = bot.blockAt(v)
+                            b = self.bot.blockAt(v)
                             if b.displayName not in self.dangerBlocks:
                                 continue
 
                     if b.displayName in self.dangerBlocks:
                         print(f'*** fatal error. Cant bridge dangerous block {b.displayName}')
-                        bot.stopActivity = True
+                        self.stopActivity = True
                         continue
 
                 if self.stopActivity == True:

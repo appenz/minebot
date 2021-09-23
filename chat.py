@@ -24,7 +24,7 @@ class ChatBot:
 #               "analyze":      [self.analyzeBuild,             "Analyze building",     False, 0],
                 "build":        [self.doBuild,                  "Build a blueprint",    True,  1],                
                 "deposit":      [self.depositToChest,           "Deposit all in chest", False, 0],
-                "eatFood":      [self.eatFood,                  "Eat Something",        False, 0],
+                "eat":          [self.eatFood,                  "Eat Something",        False, 0],
                 "farm":         [self.doFarming,                "Farming",              True , 0],
                 "hello":        [self.sayHello,                 "Say Hello",            False, 0],
                 "inventory":    [self.printInventory,           "List Inventory",       False, 0],

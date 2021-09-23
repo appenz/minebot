@@ -63,10 +63,15 @@ class Chest:
         if not count:
             count = i.count
         self.pybot.pdebug(f'  > {count} x {i.displayName}',3)
+        # To be ultra safe, check we have enough
+        count_check = self.pybot.invItemCount(i.displayName)
+        self.pybot.pdebug(f'  ? {count_check} x {i.displayName}',5)
+        if count > count_check:
+            self.pybot.perror(f'Item discrepancy: {count} > {count_check}.')
         try:
             self.pybot.pdebug(f'    try dep {i.type} {count} ({i.count} in stack) into {self.chestObj.title}',5)
-            self.pybot.printInventory()
-            self.printContents()
+#            self.pybot.printInventory()
+#            self.printContents()
             newChest = self.chestObj.deposit(i.type,None,count)
             if newChest:
                 self.chestObj = newChest
@@ -80,7 +85,9 @@ class Chest:
             count = i.count
         self.pybot.pdebug(f'  < {count} x {i.displayName}',3)
         try:
-            self.chestObj.withdraw(i.type,None,count)
+            newChest = self.chestObj.withdraw(i.type,None,count)
+            if newChest:
+                self.chestObj = newChest
         except Exception as e:
             self.pybot.pexception(f'*** error withdrawing {count} of item {i.displayName} ({i.count} left)',e)
             return False

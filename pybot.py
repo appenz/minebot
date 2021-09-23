@@ -29,7 +29,7 @@ class PyBot(ChatBot, FarmBot, MineBot, BuildBot, MovementManager, InventoryManag
         self.account = account
         self.bossPlayer = self.account['master']
         self.callsign = self.account['user'][0:2]+":"
-        self.debug_lvl = 3
+        self.debug_lvl = 5
 
         mineflayer = require('mineflayer')
 
@@ -109,7 +109,6 @@ if account.locations:
 print(f'My boss is {pybot.bossPlayer}. Others can send commands to me with prefix "{pybot.callsign}"')
 time.sleep(1)
 pybot.sayStatus()
-#pybot.printInventory()
 
 @On(pybot.bot, 'chat')
 def onChat(sender, message, this, *rest):

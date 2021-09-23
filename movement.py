@@ -45,7 +45,7 @@ class MovementManager:
         return True
 
     def walkTo(self,x,y=None,z=None):
-        if x.position:
+        if hasattr(x, 'position') and x.position:
             v = Vec3(x.position.x,x.position.y,x.position.z)
             self.safeWalk(v,0.2)
         elif not y:
@@ -55,7 +55,7 @@ class MovementManager:
             self.safeWalk(v,0.2)
 
     def walkToBlock(self,x,y=None,z=None):
-        if x.position:
+        if hasattr(x, 'position') and x.position:
             v = Vec3(x.position.x+0.5,x.position.y,x.position.z+0.5)
             self.safeWalk(v,0.2)
         elif not y:
@@ -68,7 +68,7 @@ class MovementManager:
     # Walks on top of this block
 
     def walkOnBlock(self,x,y=None,z=None):
-        if x.position:
+        if hasattr(x, 'position') and x.position:
             v = Vec3(x.position.x+0.5,x.position.y+1,x.position.z+0.5)
             self.safeWalk(v,0.2)
         elif not y:
