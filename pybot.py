@@ -15,6 +15,7 @@ from mine import *
 from build import *
 from chat import *
 from combat import *
+from gather import *
 
 #
 # Main Bot Class
@@ -22,7 +23,7 @@ from combat import *
 # Additional Methods are added via Mixin inheritance and are in the various modules
 #
 
-class PyBot(ChatBot, FarmBot, MineBot, BuildBot, CombatBot, MovementManager, InventoryManager):
+class PyBot(ChatBot, FarmBot, MineBot, GatherBot, BuildBot, CombatBot, MovementManager, InventoryManager):
 
     def __init__(self,account):
         # This is the Mineflayer bot

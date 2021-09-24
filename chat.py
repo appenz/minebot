@@ -23,6 +23,7 @@ class ChatBot:
         self.commandList = {
                 "analyze":      [self.analyzeBuild,             "Analyze building",     False, 0],
                 "build":        [self.doBuild,                  "Build a blueprint",    True,  1],                
+                "chop":         [self.chopWood,                 "Chop wood",            True,  0],                
                 "deposit":      [self.depositToChest,           "Deposit all in chest", False, 0],
                 "eat":          [self.eatFood,                  "Eat Something",        False, 0],
                 "farm":         [self.doFarming,                "Farming",              True , 0],
@@ -156,7 +157,8 @@ class ChatBot:
                 self.chat("I don't see you!")
                 return
             pos = target.position
-            self.bot.pathfinder.setGoal(pathfinder.goals.GoalNear(pos.x, pos.y, pos.z, 1))
+            #self.bot.pathfinder.setGoal(pathfinder.goals.GoalNear(pos.x, pos.y, pos.z, 1))
+            self.walkTo(pos.x, pos.y, pos.z)
 
         if 'follow' in message:
             if message == 'follow':

@@ -23,8 +23,17 @@ class MovementManager:
     def __init__(self):
         print('movement ', end='')
 
+    # Versatile blockAt, takes 3 coordinates or vector
+
+    def blockAt(self, x, y=None, z=None):
+        if y:
+            v = Vec3(x,y,z)
+        else:
+            v = x
+        return self.bot.blockAt(v)
 
     def safeWalk(self, toPosition, radius=1):
+        self.pdebug(f'    safeWalk to {toPosition.x} {toPosition.y} {toPosition.z}  r={radius}',4)
         if not toPosition:
             print('*** error: toPosition is not defined.')
             return False
@@ -47,36 +56,36 @@ class MovementManager:
     def walkTo(self,x,y=None,z=None):
         if hasattr(x, 'position') and x.position:
             v = Vec3(x.position.x,x.position.y,x.position.z)
-            self.safeWalk(v,0.2)
+            self.safeWalk(v,1)
         elif not y:
-            self.safeWalk(x,0.2)
+            self.safeWalk(x,1)
         else:
             v = Vec3(x,y,z)
-            self.safeWalk(v,0.2)
+            self.safeWalk(v,1)
 
     def walkToBlock(self,x,y=None,z=None):
         if hasattr(x, 'position') and x.position:
             v = Vec3(x.position.x+0.5,x.position.y,x.position.z+0.5)
-            self.safeWalk(v,0.2)
+            self.safeWalk(v)
         elif not y:
             v = Vec3(x.x+0.5,x.y,x.z+0.5)
-            self.safeWalk(v,0.2)
+            self.safeWalk(v)
         else:
             v = Vec3(x+0.5,y,z+0.5)
-            self.safeWalk(v,0.2)
+            self.safeWalk(v)
 
     # Walks on top of this block
 
     def walkOnBlock(self,x,y=None,z=None):
         if hasattr(x, 'position') and x.position:
             v = Vec3(x.position.x+0.5,x.position.y+1,x.position.z+0.5)
-            self.safeWalk(v,0.2)
+            self.safeWalk(v)
         elif not y:
             v = Vec3(x.x+0.5,x.y+1,x.z+0.5)
-            self.safeWalk(v,0.2)
+            self.safeWalk(v)
         else:
             v = Vec3(x+0.5,y+1,z+0.5)
-            self.safeWalk(v,0.2)
+            self.safeWalk(v)
 
 
     # this will attempt to walk on to block at v, and place a block in the direction d
