@@ -82,7 +82,7 @@ class Chest:
             self.pybot.perror('chest is full')
             return False
         count_max = self.pybot.invItemCount(item_type)
-        if count < 1:
+        if not count or count < 1:
             count = count_max
         elif count > count_max:
             self.pybot.pdebug(f'  warning: deposit of {count} x {item_name} exceeds inventory ({count_max})',2)

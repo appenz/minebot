@@ -348,7 +348,12 @@ class MineBot:
                             if b_name in self.block_will_drop:
                                 wait_t = 1
                                 break
+
+                        # We don't care about infested in ceiling
+                        for h in range(0,height):
+                            b_name = self.bot.blockAt(Vec3(c.x,c.y+h,c.z)).displayName
                             if b_name == "Infested Stone":
+                                self.pdebug(f'  located {b_name}, aborting!',1)
                                 self.stopActivity = True
                                 break
 
@@ -457,7 +462,7 @@ class MineBot:
                                 continue
 
                     if b.displayName in self.dangerBlocks:
-                        print(f'*** fatal error. Cant bridge dangerous block {b.displayName}')
+                        self.perror(f'*** fatal error. Cant bridge dangerous block {b.displayName}')
                         self.stopActivity = True
                         continue
 

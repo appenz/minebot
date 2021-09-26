@@ -142,6 +142,7 @@ class GatherBot:
             self.chop(x0+1,y, z0+1, 1)
             self.chop(x0,  y, z0+1, 1)
             y = y - 1
+            self.healToFull()
 
         return True
 
@@ -163,6 +164,7 @@ class GatherBot:
             if not self.chopBigTree():
                 break
 
+        self.walkTo(start_pos)
         start_chest.restock(self.chopEquipList)
         start_chest.close()
         self.endActivity()

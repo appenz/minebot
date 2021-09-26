@@ -192,7 +192,7 @@ class BuildBot:
 
                             if spec.bot_pos:
                                 bot_v = area.toWorldV3(spec.bot_pos)
-                                bot_v_center = Vec3(bot_v.x, bot_v.y, bot_v.z)
+                                bot_v_center = Vec3(bot_v.x+0.5, bot_v.y, bot_v.z+0.5)
                                 placement_type +=" pos"
 
                             if spec.block_against:
@@ -204,11 +204,11 @@ class BuildBot:
                                 placement_type +=" dir"
 
                             self.safeWalk(bot_v_center,0.1)
-                            if spec.bot_pos:
-                                time.sleep(0.5)
+                            time.sleep(1)
 
                         else:
                             self.safeWalk(bot_v_center,0.2)
+                            time.sleep(1)
 
                         against_type = self.bot.blockAt(against_v).displayName
 
@@ -216,7 +216,7 @@ class BuildBot:
 
                         print(f'  ({x:3},{y:3},{z:3}) {block_type} -> {against_type} {placement_type}')
 
-                        if not self.wieldItem(self.world2inv(block_type),quiet=True):
+                        if not self.wieldItem(self.world2inv(block_type)):
                             print(f'*** aborting, cant wield item {block_type}')
                             self.stopActivity = True
                             break

@@ -31,7 +31,7 @@ class PyBot(ChatBot, FarmBot, MineBot, GatherBot, BuildBot, CombatBot, MovementM
         self.account = account
         self.bossPlayer = self.account['master']
         self.callsign = self.account['user'][0:2]+":"
-        self.debug_lvl = 3
+        self.debug_lvl = 4
         self.lastException = None
 
         mineflayer = require('mineflayer')
