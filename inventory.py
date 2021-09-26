@@ -56,40 +56,65 @@ class Chest:
             if empty:
                 self.pybot.pdebug(f'  (none)', debug_lvl)
 
-    def depositItem(self,i,count=None):
+    def printItems(self, items):
+        self.pybot.pdebug(f'  Item List:',1)
+        for i in items:
+            self.pybot.pdebug(f'    {i.slot:3}: {i.count:3} x {i.displayName}',1)
+
+    def itemCount(self,item_arg):
+
+        item_type, item_name = self.pybot.itemTypeAndName(item_arg)
+
+        count = 0
+        inventory = self.chestObj.containerItems()
+        if inventory != []:
+            # Count how many items we have of this type
+            for i in inventory:
+                if item_type == i.type:
+                    count += i.count
+
+        return count
+
+    def depositItem(self,item_type,count=None):
+        itemObj = self.pybot.Item(item_type,1)
+        item_name = itemObj.displayName
         if self.spaceAvailable() < 2:
             self.pybot.perror('chest is full')
             return False
-        if not count:
-            count = i.count
-        self.pybot.pdebug(f'  > {count} x {i.displayName}',3)
-        # To be ultra safe, check we have enough
-        count_check = self.pybot.invItemCount(i.displayName)
-        self.pybot.pdebug(f'  ? {count_check} x {i.displayName}',5)
-        if count > count_check:
-            self.pybot.perror(f'Item discrepancy: {count} > {count_check}.')
+        count_max = self.pybot.invItemCount(item_type)
+        if count < 1:
+            count = count_max
+        elif count > count_max:
+            self.pybot.pdebug(f'  warning: deposit of {count} x {item_name} exceeds inventory ({count_max})',2)
+            count = count_max
+
+        self.pybot.pdebug(f'  > {count:2} x {item_name}   ({item_type})',3)
         try:
-            self.pybot.pdebug(f'    try dep {i.type} {count} ({i.count} in stack) into {self.chestObj.title}',5)
-#            self.pybot.printInventory()
-#            self.printContents()
-            newChest = self.chestObj.deposit(i.type,None,count)
+            newChest = self.chestObj.deposit(item_type,None,count)
             if newChest:
                 self.chestObj = newChest
         except Exception as e:
-            self.pybot.pexception(f'depositing {count} of item {i.displayName} ({i.count} in stack)',e)
+            self.pybot.pexception(f'depositing {count} of item {item_name} type {item_type}',e)
             return False
         return True
 
-    def withdrawItem(self,i,count=None):
-        if not count:
-            count = i.count
-        self.pybot.pdebug(f'  < {count} x {i.displayName}',3)
+    def withdrawItem(self,item_type,count=None):
+        itemObj = self.pybot.Item(item_type,1)
+        item_name = itemObj.displayName
+        count_max = self.itemCount(item_type)
+        if count < 1:
+            count = count_max
+        elif count > count_max:
+            self.pybot.pdebug(f'  warning: withdrawal of {count} x {item_name} exceeds inventory ({count_max})',2)
+            count = count_max
+            
+        self.pybot.pdebug(f'  < {count} x {item_name}   ({item_type})',3)
         try:
-            newChest = self.chestObj.withdraw(i.type,None,count)
+            newChest = self.chestObj.withdraw(item_type,None,count)
             if newChest:
                 self.chestObj = newChest
         except Exception as e:
-            self.pybot.pexception(f'*** error withdrawing {count} of item {i.displayName} ({i.count} left)',e)
+            self.pybot.pexception(f'*** withdrawing {count} of item {item_name} ({count_max} left)',e)
             return False
         return True
 
@@ -102,14 +127,14 @@ class Chest:
             self.pybot.perror('Cant open chest to deposit Items.')
             return False
         empty_slots = self.spaceAvailable()
-        self.pybot.pdebug(f'Depositing ({empty_slots}/{chest.inventoryStart} free):',3)
+        self.pybot.pdebug(f'Depositing ({empty_slots}/{self.chestObj.inventoryStart} free):',3)
         itemList = self.pybot.bot.inventory.items()
         for i in itemList:
             if whitelist != [] and i.displayName not in whitelist:
                 continue
             elif blacklist != [] and i.displayName in blacklist:
                 continue
-            self.depositItem(i)
+            self.depositItem(i.type)
 
     # For any item on <itemList> make sure you have the right amount
     # - If too many, deposit
@@ -142,9 +167,8 @@ class Chest:
                     if i.displayName == name:
                         count = min(i.count,dn)
                         if count > 0:
-                            self.depositItem(i,count)
+                            self.depositItem(i.type,count)
                             nothing = False
-                            time.sleep(0.2)
                             dn -= count
                         if dn == 0:
                             continue
@@ -156,9 +180,8 @@ class Chest:
                     if i.displayName == name:
                         count = min(i.count,dn)
                         if count > 0:
-                            self.withdrawItem(i,count)
+                            self.withdrawItem(i.type,count)
                             nothing = False
-                            time.sleep(0.2)
                             dn -= count
                         if dn == 0:
                             continue
@@ -178,17 +201,49 @@ class InventoryManager:
     def __init__(self):
         print('inventory ', end='')
 
-    def invItemCount(self,item_name):
-        if not item_name:
-            print("*** error: no item name given for invItemCount().")
-            return 0
+    #
+    # Returns a pair of (item name, item type)
+    # Input can be:
+    # - displayName of an Item
+    # - ID of an item
+    # - an Item
+    #
+
+    def itemTypeAndName(self,item_arg):
+        if isinstance(item_arg,int):
+            item_type = item_arg
+            itemObj = self.Item(item_type,1)
+            item_name = itemObj.displayName
+        elif isinstance(item_arg,str):
+            item_name = item_arg
+            # Find this item in the inventory
+            if self.bot.inventory.items != []:
+                # find in inventory list
+                for item in self.bot.inventory.items():
+                    if item.displayName == item_name:
+                        item_type = item.type
+                        break
+                else:
+                    item_type = None
+        elif item_arg.type and item_arg.displayName:
+            item_type = item_arg.type
+            item_name = item_arg.displayName
+        else:
+            item_type = None
+            item_name = "Unknown"
+
+        return item_type, item_name
+
+    def invItemCount(self,item_arg):
+
+        item_type, item_name = self.itemTypeAndName(item_arg)
 
         count = 0
         inventory = self.bot.inventory.items()
         if inventory != []:
             # Count how many items we have of this type
             for i in inventory:
-                if item_name == i.displayName:
+                if item_type == i.type:
                     count += i.count
 
         return count
@@ -243,54 +298,40 @@ class InventoryManager:
     # Returns name of the item in hand
     #
 
-    def wieldItem(self,item,quiet=False):
-        if item == None:
-            print("error: trying to equip item 'None'.")
+    def wieldItem(self,item_arg):
+
+        if not item_arg:
+            self.perror("trying to equip item 'None'.")
             return None
 
-        if isinstance(item,str):
+        # Translate argument into type and name
 
-            # Check if we need to do this
-            if self.bot.heldItem:
-                if self.bot.heldItem.displayName == item:
-                    return item
+        item_type, item_name = self.itemTypeAndName(item_arg)
 
-            time.sleep(1)
+        # check if we found it
+        if item_type == None:
+            self.perror(f'cant find item {item_name} ({item_type}) to wield.')
+            return None
 
-            # convert string to item first
-            if self.bot.inventory.items == []:
-                print("error: empty inventory, can't wield "+item)
-                return None
-            ii = None
-            # find in inventory list
-            for i in self.bot.inventory.items():
-                if i.displayName == item:
-                    ii = i
-                    break
-            # check if we found it
-            if ii == None:
-                print("error: can't find item "+item+" to wield.")
-                return None
-            item = ii
+        # Am I already holding it?
+        if self.bot.heldItem and self.bot.heldItem.type == item_type:
+            return item_name
 
-        if self.bot.heldItem:
-            if self.bot.heldItem.displayName != item.displayName:
-                # only do this if we are not holding it already
-                if not quiet:
-                    print(f'Switching to {item.displayName}')
-                pass
-            else:
-                return self.bot.heldItem.displayName
-        else:
-            if not quiet:
-                print(f'Equipping {item.displayName}')
-            pass
+        # Equip the item
+        self.pdebug(f'  equip {item_name} ({item_type})',3)
 
         try:
-            self.bot.equip(item,"hand")
+            self.bot.equip(item_type,"hand")
         except Exception as e:
-            print("*** wielding item failed. In hand {self.bot.heldItem.displayName} vs {item.displayName}")
+            if self.bot.heldItem:
+                n = self.bot.heldItem.displayName
+            else:
+                n = "None"
+            self.pexception(f'wielding item failed. In hand {n} vs {item_name}',e)
 
+        if not self.checkInHand(item_name):
+            self.perror(f'Wielding item {item_name} failed!')
+            
         if self.bot.heldItem:
             return self.bot.heldItem.displayName
         else:
@@ -385,8 +426,8 @@ class InventoryManager:
 
     def depositToChest(self, whitelist=[], blacklist=[]):
         chest = Chest(self)
-        start_chest.deposit(whitelist,blacklist)
-        start_chest.close()
+        chest.deposit(whitelist,blacklist)
+        chest.close()
 
     #
     # Find closest chest and restock from it according to the list
@@ -394,8 +435,8 @@ class InventoryManager:
 
     def restockFromChest(self, itemList):
         chest = Chest(self)
-        start_chest.restock(itemList)
-        start_chest.close()
+        chest.restock(itemList)
+        chest.close()
 
     #
     #  Transfer all of the content of the closest chest, to the destination chest
@@ -418,7 +459,7 @@ class InventoryManager:
             slots = 0
             for i in c1.chestObj.containerItems():
                 if i.count > 0:
-                    c1.withdrawItem(i,i.count)
+                    c1.withdrawItem(i.type,i.count)
                     time.sleep(0.2)
                     slots += 1
                     if slots > 27:

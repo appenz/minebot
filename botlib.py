@@ -79,7 +79,14 @@ def rectangleBorder(w,h):
         for dy in range(-h+1,h):
             yield -w,dy
 
-
+def checkIntArg(x, min, max):
+    if not x.isdigit():
+        return False
+    x = int(x)
+    if x >= min and x <= max:
+        return x
+    else:
+        return 0
 
 
 

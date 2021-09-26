@@ -32,6 +32,7 @@ class PyBot(ChatBot, FarmBot, MineBot, GatherBot, BuildBot, CombatBot, MovementM
         self.bossPlayer = self.account['master']
         self.callsign = self.account['user'][0:2]+":"
         self.debug_lvl = 3
+        self.lastException = None
 
         mineflayer = require('mineflayer')
 
@@ -48,6 +49,7 @@ class PyBot(ChatBot, FarmBot, MineBot, GatherBot, BuildBot, CombatBot, MovementM
 
         self.mcData   = require('minecraft-data')(bot.version)
         self.Block    = require('prismarine-block')(bot.version)
+        self.Item     = require('prismarine-item')(bot.version)
         self.Vec3     = require('vec3').Vec3
 
         # Setup for the pathfinder plugin
@@ -85,6 +87,12 @@ class PyBot(ChatBot, FarmBot, MineBot, GatherBot, BuildBot, CombatBot, MovementM
         print(f'*** exception: {message}')
         if self.debug_lvl >= 4:
             print(e)
+        else:
+            with open("exception.debug", "w") as f:
+                f.write("PyBit Minecraft Bot - Exception Dump")
+                f.write(str(e))
+                f.write("")
+        self.lastException = e
 
     def pinfo(self, message):
         if self.debug_lvl > 0:
@@ -109,7 +117,8 @@ if account.locations:
 
 # Report status
 print(f'My boss is {pybot.bossPlayer}. Others can send commands to me with prefix "{pybot.callsign}"')
-time.sleep(1)
+while not pybot.bot.health:
+    time.sleep(1)
 pybot.sayStatus()
 
 @On(pybot.bot, 'chat')

@@ -39,12 +39,12 @@ class ChatBot:
 
     def chat(self,txt):
         self.bot.chat(txt)
-        print('  chat: ',txt)
+        self.pdebug(f'  chat: {txt}',0)
 
     def sayStatus(self):
-        print('  level : ',self.bot.experience.level)
-        print('  health: ',int(100*self.bot.health/20),"%")
-        print('  food  : ',int(100*self.bot.food/20),"%")
+        self.pdebug(f'  level : {self.bot.experience.level}',0)
+        self.pdebug(f'  health: {int(100*self.bot.health/20)}%',0)
+        self.pdebug(f'  food  : {int(100*self.bot.food/20)}%',0)
 
     def sayHello(self):
         self.chat('hello to you too!')
@@ -194,24 +194,6 @@ class ChatBot:
             @AsyncTask(start=True)
             def doTransfer(task):
                 transferToChest(self.bot,args[0])
-
-        if message.startswith('minebox'):
-            args = [int(s) for s in message[7:].split() if s.isdigit()]
-            if len(args) != 3:
-                self.chat('Minebox needs three arguments: rx, ry and height.')
-                return
-            if args[0] < 1:
-                self.chat(f'Box half lenght in x direction must be at least 1, is {args[0]}')
-                return
-            if args[1] < 1:
-                self.chat(f'Box half lenght in y direction must be at least 1, is {args[1]}')
-                return
-            if args[2] < 2:
-                self.chat(f'Box height must be at least 2, is {args[2]}')
-                return
-            @AsyncTask(start=True)
-            def doAreaMine(task):
-                areaMine(self.bot,args[0],args[1],args[2])
 
         if message.startswith('mineshaft'):
             args = [int(s) for s in message[9:].split() if s.isdigit()]

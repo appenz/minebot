@@ -48,6 +48,7 @@ class FarmBot:
         start_chest = Chest(self)
         if not start_chest.block:
             self.perror('Please start farming near a chest.')
+            self.endActivity()
             return False
         start_pos = start_chest.block.position
         start_chest.restock(self.farmingEquipList)

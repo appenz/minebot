@@ -42,16 +42,17 @@ class CombatBot:
             self.stopActivity = True
 
     def healToFull(self):
-        if self.bot.health == 20:
+        if self.bot.health == 20 and self.bot.food > 18:
             return
         self.healMode = True
-        self.pdebug(f'Bot is injured, healing up.',2)    
+        self.pdebug(f'Bot is injured or hungry, resting.',2)    
         h = 0
-        while self.bot.health < 20:
+        while self.bot.health < 20 or self.bot.food < 18:
             if self.bot.health > h:
                 self.pdebug(f'  health: {int(100*self.bot.health/20)}%   food: {int(100*self.bot.food/20)}%',3)
                 h = self.bot.health
             self.eatFood()
-            time.sleep(1)
+            time.sleep(2)
+        self.pdebug(f'  health: {int(100*self.bot.health/20)}%   food: {int(100*self.bot.food/20)}%',3)
         self.pdebug(f'done.',2)
         self.healMode = False
