@@ -41,7 +41,12 @@ class MineBot:
         "Furnace",
         "Ladder",
         "Glass",
-        "Stone Bricks"
+        "Stone Bricks",
+        "Chiseled Stone Bricks",
+        "Stone Brick Stairs",
+        "Water",
+        "Flowing Water",
+        "Bubble Column",
     ]
 
     # These blocks we need to bridge over

@@ -318,7 +318,7 @@ class InventoryManager:
             return item_name
 
         # Equip the item
-        self.pdebug(f'  equip {item_name} ({item_type})',3)
+        self.pdebug(f'    equip {item_name} ({item_type})',3)
 
         try:
             self.bot.equip(item_type,"hand")
