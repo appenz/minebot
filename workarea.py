@@ -38,7 +38,7 @@ class workArea:
         self.start_torch = pybot.findClosestBlock("Torch",xz_radius=3,y_radius=1)
 
         if not self.start_chest or not self.start_torch:
-            print("Can't find starting position. Place chest, and torch on the ground towards the analysis direction.")
+            print("Can't find starting position. Place chest, and torch on the ground next to it to mark the direction.")
             return None
 
         if self.start_torch.position.y != self.start_chest.position.y:
@@ -65,7 +65,6 @@ class workArea:
         self.valid = True
 
 
-    # Convert position relative to absolute coordinates
 
     def toWorld(self,x,y,z):
         return Vec3(self.origin.x+self.latx*x+self.d.x*z,
@@ -89,8 +88,11 @@ class workArea:
 
     # Minecraft block at relative coordinates
 
-    def blockAt(self,v):
-        return self.pybot.bot.blockAt(self.toWorldV3(v))
+    def blockAt(self,*argv):
+        if len(argv) == 3:
+            return self.pybot.bot.blockAt(self.toWorld(argv[0],argv[1],argv[2]))
+        else:
+            return self.pybot.bot.blockAt(self.toWorldV3(argv[0]))
 
     # Returns a list of all blocks in the workArea
 
@@ -113,3 +115,25 @@ class workArea:
                 for x in self.xrange:
                     blocks.append(self.toVec3(x,y,z))
         return blocks
+
+    # Convert position relative to absolute coordinates
+
+    def walkTo(self, *argv):
+        if len(argv) == 3:
+            v = self.toWorld(argv[0],argv[1],argv[2])
+        else:
+            v = self.toWorldV3(argv[0])
+        self.pybot.walkTo(v)
+
+
+    # Walk back to Torch
+
+    def walkToStart(self):
+        self.pybot.walkTo(self.start_torch.position)        
+
+    # Restock from Chest
+
+    def restock(self, item_list):
+        self.walkToStart()
+        self.pybot.restockFromChest(item_list)
+

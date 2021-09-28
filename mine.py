@@ -2,11 +2,14 @@
 # Functions for mining blocks
 #
 
+import itertools
+
 from javascript import require
 Vec3     = require('vec3').Vec3
 
 from botlib import *
 from inventory import *
+from workarea import *
 
 class MineBot:
 
@@ -108,17 +111,21 @@ class MineBot:
 
     #
     # Mine a block with the right tool
-    #
+    # Takes a Vector or x,y,z as input
 
-    def mineBlock(self,x,y,z):
-        v = Vec3(x,y,z)
+    def mineBlock(self,x,y=None,z=None):
+        if not y and not z:
+            v = x
+        else:
+            v = Vec3(x,y,z)
+        
         b = self.bot.blockAt(v)
 
         if b.digTime(274) > 100 and b.displayName not in self.ignored_blocks:
             # Ok, this looks mineable
             # Try 20 times, in case gravel is dropping down
             for attempts in range(0,20):
-                print(f'  mine   ({x},{y},{z}) {b.displayName} t:{b.digTime(274)}')
+                self.pdebug(f'    mine   ({v.x},{v.y},{v.z}) {b.displayName} t:{b.digTime(274)}',3)
 
                 # Check for the right tool
                 if b.displayName in self.needs_shovel:
@@ -149,6 +156,7 @@ class MineBot:
 
     def minePath(self,start,end,height):
 
+        print(start,end,height)
         c = Vec3(start.x, start.y, start.z)
         d = Vec3( (end.x-start.x)/max(abs(end.x-start.x),1), 0, (end.z-start.z)/max(abs(end.z-start.z),1) )
 
@@ -284,12 +292,89 @@ class MineBot:
         return True
 
 
+    #
+    #  Build a strip mine of a specific height and width and light it up
+    #
+
+    def stripMine(self,width=3,height=3,valrange=3):
+
+        max_blocks = 100
+        z = 0
+        z_torch = 0
+
+        area = workArea(self,width,height,99999)
+
+        while not self.stopActivity:
+            # Get ready
+
+            area.restock(self.miningEquipList)
+            self.eatFood()
+            mined_blocks = 0
+
+            while mined_blocks < max_blocks and not self.stopActivity:
+    
+                print("Go!")
+                area.walkTo(0,0,z)
+                # Step 1 - Mine the main tunnel
+                for x in area.xrange:
+
+                    if self.stopActivity: break
+
+                    # Check for infested
+                    for y in area.yrange:
+                        if area.blockAt(x,y,z).displayName == "Infested Stone":
+                            self.pdebug(f'  located {b_name}, aborting!',1)
+                            self.stopActivity = True
+                            break
+
+                    # Try to mine the column. May take multiple attempts due to gravel.
+                    for tries in range(0,16):
+                        for y in area.yrange:                        
+                            if self.stopActivity: break
+                            if area.blockAt(x,y,z).displayName in self.block_will_drop:
+                                mined_blocks += self.mineBlock( area.toWorld(x,y,z) )
+                                time.sleep(1)
+                            else:
+                                mined_blocks += self.mineBlock( area.toWorld(x,y,z) )
+
+                    for y in area.yrange:                      
+                        if area.blockAt(x,y,z).displayName not in self.ignored_blocks:
+                            self.perror(f'aborting - block not cleared: {area.blockAt(x,y,z).displayName}.')
+                            self.Activity = False
+                            break
+                    
+                # Step 2 - Look for Valuables
+
+                # Done. Light up if needed and move forward by one.
+                if z > z_torch:
+                    # try to place a torch
+                    torch_v = area.toWorld(area.width2,1,z)
+                    wall_v  = area.toWorld(area.width2+1,1,z)
+                    dv = subVec3(torch_v, wall_v)
+                    if self.bot.blockAt(wall_v).displayName not in self.ignored_blocks:
+                        self.pdebug("  placing torch.",2)
+                        self.wieldItem("Torch")
+                        if self.safePlaceBlock(wall_v,dv):
+                            z_torch += 6
+                z += 1
+                
+            # ...and back to the chest to restock
+            area.walkToStart()
+            txt = ['PyBot',f'Mine {width}x{height}', f'Length: {z}', myDate() ]
+            self.updateSign(txt,tryonly=True)
+
+        # Mining ended
+        area.restock(self.miningEquipList)
+        self.eatFood()
+
 
     #
     # Build a strip mine of a specific height and width and light it up
     #
 
-    def stripMine(self,width=3,height=3,valrange=3):
+    def stripMine2(self,width=3,height=3,valrange=3):
+
+        max_blocks = 100
 
         # Determine "forward" direction from chest+torch
         start_chest = self.findClosestBlock("Chest",xz_radius=3,y_radius=1)
@@ -313,6 +398,7 @@ class MineBot:
 
         # position 2 forward from starting position
         cursor = addVec3(start, d)
+        corridor_length = 0
 
         # lateral direction (i.e. strip mine cross section)
         latx = abs(d.z)
@@ -329,13 +415,16 @@ class MineBot:
 
             mined_blocks = 0
 
-            while mined_blocks < 100 and not self.stopActivity:
+            while mined_blocks < max_blocks and not self.stopActivity:
 
                 # Move deeper down the strip mine
+                corridor_length += 1
                 cursor = addVec3(cursor, d)
                 tic = abs(cursor.x)+abs(cursor.z)
 
                 self.safeWalk(cursor)
+
+                # Part 1 - Clear out the main corridor
 
                 for i in range(-w2, w2+1):
 
@@ -362,6 +451,9 @@ class MineBot:
                                 self.stopActivity = True
                                 break
 
+                        if  self.stopActivity:
+                            break
+
                         # mine
                         for h in range(0,height):
                             mined_blocks += self.mineBlock( c.x,c.y+h,c.z)
@@ -377,38 +469,41 @@ class MineBot:
                         else:
                             break
 
-                # check sides for valuable things
+                # Part 2 - Check sides for valuable things
 
                 if valrange > 0 and not self.stopActivity:
                     h_max = 1
-                    v_max = None
+                    v_max = 0
+                    danger = None
 
-                    for i in range(0, w2+valrange+1):
+                    for i in range(0, w2+valrange+1): 
 
                         # Check for danger
                         v = Vec3(cursor.x+i*latx, cursor.y-1, cursor.z+i*latz)
                         b = self.bot.blockAt(v)
                         if b.displayName in self.dangerBlocks:
-                            print(f'Danger: {b.displayName}')
-                            self.safeWalk(cursor)
-                            break
+                            danger = b.displayName
 
                         for j in range(0,height):
                             v = Vec3(cursor.x+i*latx, cursor.y+j, cursor.z+i*latz)
                             b = self.bot.blockAt(v)
                             if b.displayName in self.valuable_blocks:
+                                if v_max == 0:
+                                    self.pdebug(f'  At {corridor_length:3} found {b.displayName}',2)
                                 found = True
                                 if j > h_max:
                                     h_max = j
                                 v_max = v
-                                self.pdebug(f'  located {b.displayName}',2)
-                        
-                    if v_max:
+
+                    if v_max and danger:
+                        self.pdebug(f'    but cant access across {danger}',2)
+                    elif v_max:
                         self.minePath(cursor,Vec3(v_max.x,cursor.y,v_max.z),h_max+1)
                         self.safeWalk(cursor)
 
                     h_max = 1
-                    v_max = None
+                    v_max = 0
+                    danger = None
 
                     for i in range(0, -w2-valrange-1, -1):
 
@@ -416,21 +511,22 @@ class MineBot:
                         v = Vec3(cursor.x+i*latx, cursor.y-1, cursor.z+i*latz)
                         b = self.bot.blockAt(v)
                         if b.displayName in self.dangerBlocks:
-                            print(f'Danger: {b.displayName}')
-                            self.safeWalk(cursor)
-                            break
+                            danger = b.displayName
 
                         for j in range(0,height):
                             v = Vec3(cursor.x+i*latx, cursor.y+j, cursor.z+i*latz)
                             b = self.bot.blockAt(v)
                             if b.displayName in self.valuable_blocks:
+                                if v_max == 0:
+                                    self.pdebug(f'  At {corridor_length:3} found {b.displayName}',2)
                                 found = True
                                 if j > h_max:
                                     h_max = j
                                 v_max = v
-                                self.pdebug(f'located {b.displayName}')
-                        
-                    if v_max:
+
+                    if v_max and danger:
+                        self.pdebug(f'    but cant access across {danger}',2)
+                    elif v_max:
                         self.minePath(cursor,Vec3(v_max.x,cursor.y,v_max.z),h_max+1)
                         self.safeWalk(cursor)
 
@@ -474,7 +570,12 @@ class MineBot:
                 if self.stopActivity == True:
                     continue
 
+            self.pdebug(f'Return to chest at l:{corridor_length}',2)
+
             # Deposit mined materials
+            self.safeWalk(start)
+            txt = ['PyBot',f'Mine {width}x{height}', f'Length: {corridor_length}', myDate() ]
+            self.updateSign(txt,tryonly=True)
             self.safeWalk(start)
             self.restockFromChest(self.miningEquipList)
             self.eatFood()

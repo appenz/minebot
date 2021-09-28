@@ -277,16 +277,23 @@ class InventoryManager:
     # Check if a specific item is in hand
     #
 
-    def checkInHand(self,item_name):
+    def checkInHand(self,item_arg):
 
         if not self.bot.heldItem:
             return False
 
-        if self.bot.heldItem.displayName == item_name:
+        item_type, item_name = self.itemTypeAndName(item_arg)
+
+        if self.bot.heldItem.type == item_type:
             return True
         else:
             return False
 
+    def itemInHand(self):
+
+        if not self.bot.heldItem:
+            return None, "None"
+        return self.bot.heldItem.type, self.bot.heldItem.displayName
     #
     # Equip an Item into the main hand.
     #
@@ -314,28 +321,31 @@ class InventoryManager:
             return None
 
         # Am I already holding it?
-        if self.bot.heldItem and self.bot.heldItem.type == item_type:
+        if self.checkInHand(item_type):
             return item_name
 
         # Equip the item
-        self.pdebug(f'    equip {item_name} ({item_type})',3)
+        self.pdebug(f'      equip {item_name} ({item_type})',3)
 
-        try:
-            self.bot.equip(item_type,"hand")
-        except Exception as e:
-            if self.bot.heldItem:
-                n = self.bot.heldItem.displayName
+        # Try wielding 5 times
+        for i in range(0,5):
+            try:
+                self.bot.equip(item_type,"hand")
+            except Exception as e:
+                hand_type, hand_name = self.itemInHand()
+                self.pexception(f'wieldItem() try #{i}. In hand {hand_name} vs {item_name}',e)
+                # Did it raise an exception, but we still have the right item? If yes, all good.
+                if self.checkInHand(item_type):
+                    return item_name
+                time.sleep(1)
             else:
-                n = "None"
-            self.pexception(f'wielding item failed. In hand {n} vs {item_name}',e)
+                break
 
         if not self.checkInHand(item_name):
-            self.perror(f'Wielding item {item_name} failed!')
-            
-        if self.bot.heldItem:
-            return self.bot.heldItem.displayName
-        else:
+            self.perror(f'Wielding item {item_name} failed after max retires!')
             return None
+
+        return item_name
 
     #
     # Equip an item from a list of names
@@ -362,6 +372,56 @@ class InventoryManager:
 
     def printEquipment(self):
         print("In Hand: ",bot.heldItem.displayName)
+
+    #
+    # Update a sign. This requires destroying it first.
+    # And it's also hard due to an issue in Mineflayer
+    #
+
+    def updateSign(self,txt_arg,tryonly=False):
+
+        if type(txt_arg) is list:
+            txt = txt_arg
+        else:
+            txt = ["",txt_arg,"",""]
+        
+        # Total hack, should use block tags...
+        sign_block = self.findClosestBlock("Spruce Wall Sign",2)
+        if not sign_block:
+            if not tryonly:
+                self.perror('cant find any sign close by to update.')
+            return False
+
+        p_sign = sign_block.position
+        dv = directionToVector(sign_block)
+        p_against = subVec3(p_sign,dv)
+
+        self.safeWalk(Vec3(p_sign.x+0.5, self.bot.entity.position.y, p_sign.z+0.5),0.2)
+
+        # Mine up the sign
+        sign_name = sign_block.displayName
+        p = sign_name.find('Wall')
+        if p > 0:
+            sign_name = sign_name[0:p]+sign_name[p+5:]
+
+        self.pdebug(f'Updating {sign_name} to "{txt[0]} {txt[1]}..."',2)
+        self.mineBlock(sign_block.position)
+        time.sleep(2)
+
+        if self.wieldItem(sign_name) != sign_name:
+            return False
+
+        self.safePlaceBlock(p_against,dv)
+
+        d = { "location": p_sign, "text1": txt[0], "text2": txt[1], "text3": txt[2], "text4": txt[3], }
+
+        try:
+            r = self.bot._client.write('update_sign', d)
+        except Exception as e:
+            self.pexception("Updating text of sign",e)   
+
+        return True
+
 
     #
     # Eat food, but only if hungry

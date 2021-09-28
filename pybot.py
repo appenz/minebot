@@ -5,6 +5,7 @@
 #  (c) 2021 by Guido Appenzeller & Daniel Appenzeller
 #
 
+import javascript
 from javascript import require, On, Once, AsyncTask, once, off
 import time
 

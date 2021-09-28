@@ -15,6 +15,11 @@ def myTime():
     now = datetime.datetime.now()
     return now.strftime("%H:%M:%S")
 
+def myDate():
+    now = datetime.datetime.now()
+    return now.strftime("%m/%d/%y %H:%M")
+
+
 
 #
 # Math helper functions
@@ -88,11 +93,19 @@ def checkIntArg(x, min, max):
     else:
         return 0
 
+def directionToVector(block):
+    m = block.metadata
 
-
-
-
-
+    if   m == 1: #North  001 vs 010
+        return Vec3(0,0,-1)
+    elif m == 3: # South 011 vs 011
+        return Vec3(0,0,1)
+    elif m == 5: # West  101 vs 100
+        return Vec3(-1,0,0)
+    elif m == 7: # East  111 vs 101
+        return Vec3(1,0,0)
+    else:
+        return False
 
 
 
