@@ -9,6 +9,10 @@ from botlib import *
 #   x is lateral (torch is 0)
 #   z is depth (torch is at -1)
 #   y is height (chest is at 0)
+#
+#   NOTE: This means this is a LEFT HANDED coordinate system while
+#         Minecraft uses a RIGHT HANDED coordinate system. Yes, I know.
+#         It still makes more sense this way.
 
 class workArea:
 
@@ -29,9 +33,9 @@ class workArea:
         self.height = height
         self.depth = depth
 
-        self.xrange = range(-self.width2, self.width2+1)
-        self.yrange = range(0,height)
-        self.zrange = range(0,depth)
+        self.status = "new"
+        self.blocks_mined = 0
+        self.last_break = 0
 
         # Determine "forward" direction from chest+torch
         self.start_chest = pybot.findClosestBlock("Chest",xz_radius=3,y_radius=1)
@@ -56,14 +60,28 @@ class workArea:
         # Origin
         self.origin = Vec3(self.start.x+2*self.d.x,self.start.y,self.start.z+2*self.d.z)
 
-        # lateral direction, note that this is always positive
-        # This means we mirror construction
-        self.latx = abs(self.d.z)
-        self.latz = abs(self.d.x)
-        
+        # Vector directions
+        self.forwardVector = self.d
+        self.backwardVector = invVec3(self.d)
+
+        # Note that we flip build area vs. world coordinates. Left Handed vs Right handed.
+        self.leftVector = rotateLeft(self.d)
+        self.rightVector = rotateRight(self.d)
+
+        self.latx = self.rightVector.x
+        self.latz = self.rightVector.z
+
         # Done. Set flag.
         self.valid = True
 
+    def xRange(self):
+        return range(-self.width2, self.width2+1)
+
+    def yRange(self):
+        return range(0,self.height)
+
+    def zRange(self):
+        return range(0,self.depth)
 
 
     def toWorld(self,x,y,z):
@@ -99,9 +117,9 @@ class workArea:
     def allBlocks(self):
         blocks = []
 
-        for z in self.zrange:
-            for y in self.yrange:
-                for x in self.xrange:
+        for z in self.zRange():
+            for y in self.yRange():
+                for x in self.xRange():
                     blocks.append(Vec3(x,y,z))
         return blocks
 
@@ -110,9 +128,9 @@ class workArea:
     def allBlocksWorld(self):
         blocks = []
 
-        for z in self.zrange:
-            for y in self.yrange:
-                for x in self.xrange:
+        for z in self.zRange():
+            for y in self.yRange():
+                for x in self.xRange():
                     blocks.append(self.toVec3(x,y,z))
         return blocks
 
@@ -125,11 +143,32 @@ class workArea:
             v = self.toWorldV3(argv[0])
         self.pybot.walkTo(v)
 
+    def walkToBlock(self, *argv):
+        if len(argv) == 3:
+            v = self.toWorld(argv[0],argv[1],argv[2])
+        else:
+            v = self.toWorldV3(argv[0])
+        self.pybot.walkToBlock(v)
+
+    # More precise version (0.3 blocks)
+
+    def walkToBlock3(self, *argv):
+        if len(argv) == 3:
+            v = self.toWorld(argv[0],argv[1],argv[2])
+        else:
+            v = self.toWorldV3(argv[0])
+        self.pybot.walkToBlock3(v)
+
+
+    # String area direction as North, South etc.
+
+    def directionStr(self):
+        return directionStr(self.d)
 
     # Walk back to Torch
 
     def walkToStart(self):
-        self.pybot.walkTo(self.start_torch.position)        
+        self.pybot.walkToBlock3(self.start_torch.position)        
 
     # Restock from Chest
 

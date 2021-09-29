@@ -137,8 +137,8 @@ class BuildBot:
 
             # Build, back to front, bottom to top
             for z in range(bp.depth-1,-1,-1):
-                for y in bp.yrange:
-                    for x in bp.xrange:
+                for y in bp.yRange():
+                    for x in bp.xRange():
                         if self.stopActivity:
                             break
 

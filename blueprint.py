@@ -30,17 +30,21 @@ class Blueprint:
         self.width2 = int((width-1)/2)
         self.height = height
         self.depth = depth
-
-        self.xrange = range(-self.width2, self.width2+1)
-        self.yrange = range(0,height)
-        self.zrange = range(0,depth)
         
+    def xRange(self):
+        return range(-self.width2, self.width2+1)
+
+    def yRange(self):
+        return range(0,self.height)
+
+    def zRange(self):
+        return range(0,self.depth)
 
     def blockAt(self,v):
         return self.block(v.x,v.y,v.z)
 
     def block(self,x,y,z):
-        if x not in self.xrange or y not in self.yrange or z not in self.zrange:
+        if x not in self.xRange() or y not in self.yRange() or z not in self.zRange():
             print(f'*** error blueprint {self} index out of range {x} {y} {z}.')
             return False
         # Note: need to invert the y axis

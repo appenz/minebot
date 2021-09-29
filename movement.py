@@ -74,6 +74,18 @@ class MovementManager:
             v = Vec3(x+0.5,y,z+0.5)
             self.safeWalk(v)
 
+    def walkToBlock3(self,x,y=None,z=None):
+        if hasattr(x, 'position') and x.position:
+            v = Vec3(x.position.x+0.5,x.position.y,x.position.z+0.5)
+            self.safeWalk(v,0.3)
+        elif not y:
+            v = Vec3(x.x+0.5,x.y,x.z+0.5)
+            self.safeWalk(v,0.3)
+        else:
+            v = Vec3(x+0.5,y,z+0.5)
+            self.safeWalk(v,0.3)
+
+
     # Walks on top of this block
 
     def walkOnBlock(self,x,y=None,z=None):
@@ -96,22 +108,17 @@ class MovementManager:
         b_gap = self.bot.blockAt(v_gap)
 
         if b_gap.displayName not in self.empty_blocks:
-            print(f'*** error: safePlaceBlock cant place block in space occupied by {b_gap.displayName}.')
-            print(f'  * {b_gap.displayName} @{v_gap.x}/{v_gap.y}/{v_gap.z} against {b.displayName} @{v.x}/{v.y}/{v.z}')
+            self.perror(f'cant place block in space occupied by {b_gap.displayName}.')
+            self.perror(f'{b_gap.displayName} @{v_gap.x}/{v_gap.y}/{v_gap.z} against {b.displayName} @{v.x}/{v.y}/{v.z}')
             return False
-
         if b.displayName in self.empty_blocks:
-            print(f'*** error safePlaceBlock cant place against air.')
-            print(f'  * {b_gap.displayName} @{v_gap.x}/{v_gap.y}/{v_gap.z} against {b.displayName} @{v.x}/{v.y}/{v.z}')
-            # return False
-
+            self.perror(f'place {b_gap.displayName} @{v_gap.x}/{v_gap.y}/{v_gap.z} against {b.displayName} @{v.x}/{v.y}/{v.z}')
+            return False
         try:
             self.bot.placeBlock(b,dv)
             return True
         except Exception as e:
-            print(f'*** error: placing block failed.')
-            #print(f'"*** exception: {e}')
-            print(f'  * {b_gap.displayName} @{v_gap.x}/{v_gap.y}/{v_gap.z} against {b.displayName} @{v.x}/{v.y}/{v.z}')
+            self.pexception(f'{b_gap.displayName} @{v_gap.x}/{v_gap.y}/{v_gap.z} against {b.displayName} @{v.x}/{v.y}/{v.z}',e)
             return False
 
     def bridgeBlock(self, v, d):

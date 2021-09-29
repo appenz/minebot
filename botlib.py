@@ -31,8 +31,38 @@ def addVec3(v1,v2):
 def subVec3(v1,v2):
     return Vec3(v1.x-v2.x,v1.y-v2.y,v1.z-v2.z)
 
+def invVec3(v1):
+    return Vec3(-v1.x,-v1.y,-v1.z)
+
+
 def lenVec3(v):
     return sqrt(v.x*v.x+v.y*v.y+v.z*v.z)
+
+# Minecraft is a right-handed coordinate system
+#
+#    0--------X------->  
+#    |      North
+#    Z   West   East
+#    |      South
+#    V    
+
+def rotateLeft(v):
+    return Vec3(v.z,0,-v.x)
+
+def rotateRight(v):
+    return Vec3(-v.z,0,v.x)
+
+def directionStr(v):
+    if abs(v.x) > abs(v.z):
+        if v.x > 0:
+            return "East"
+        else:
+            return "West"
+    else:
+        if v.z > 0:
+            return "South"
+        else:
+            return "North"
 
 def distanceVec3(v1,v2):
     if not v1:
