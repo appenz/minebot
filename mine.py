@@ -98,7 +98,7 @@ class MineBot:
         "Stone Pickaxe":5,
         "Stone Shovel":2,
         "Iron Pickaxe":2,
-        "Torch": 5,
+        "Torch": 10,
         "Cobblestone" : 64,
         "Stone Bricks" : 256,
         "Dirt" : 0,
@@ -119,6 +119,14 @@ class MineBot:
         "Emerald" : 0,
         "Chiseled Stone Bricks" : 0,
         "Block of Coal" : 0,
+    }
+
+    miningMinimumList = {
+        "Bread":1,
+        "Stone Pickaxe":2,
+        "Stone Shovel":1,
+        "Iron Pickaxe":1,
+        "Torch": 5,
     }
 
     def __init__(self):
@@ -498,7 +506,7 @@ class MineBot:
         z_torch = 0
         z =0
         area = workArea(self,width,height,99999)
-        area.status = "mine is safe"
+        area.status = "---"
 
         while not self.stopActivity:
             # Get ready
@@ -506,9 +514,19 @@ class MineBot:
             area.restock(self.miningEquipList)
             self.eatFood()
             area.last_break = area.blocks_mined
+            time.sleep(1)
+            if not self.checkMinimumList(self.miningMinimumList):
+                return False
 
             while area.blocks_mined-area.last_break < break_interval and not self.stopActivity:
                 area.walkToBlock3(0,0,z-1)
+
+                # Step 0 - Check if we are still good
+                if not self.checkMinimumList(self.miningMinimumList):
+                    self.perror("Aborting, out of required equipment.")
+                    self.stopActivity = True
+                    area.status = "out of tools"
+                    break
 
                 # Step 1 - Mine the main tunnel
                 for x in area.xRange():

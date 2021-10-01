@@ -234,6 +234,14 @@ class InventoryManager:
 
         return item_type, item_name
 
+    def checkMinimumList(self, items):
+        for i in items:
+            print(i, self.invItemCount(i), items[i])
+            if self.invItemCount(i) < items[i]:
+                self.pdebug(f'Insufficient Items: {i} {self.invItemCount(i)}/{items[i]}',1)
+                return False
+        return True
+
     def invItemCount(self,item_arg):
 
         item_type, item_name = self.itemTypeAndName(item_arg)
