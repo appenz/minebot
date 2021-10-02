@@ -1,5 +1,5 @@
 #
-# Functions for fighting, or running away
+# Functions for running away
 #
 
 from javascript import require, On, Once, AsyncTask, once, off
@@ -33,6 +33,7 @@ class CombatBot:
             # Health 90%. Stop current activity.
             self.pdebug(f'WARNING: Health at {h}%. Stopping current activity.',1)
             self.stopActivity = True
+            self.dangerType = "danger: health"
 
         # Check Food
         if f <= 80:
@@ -40,6 +41,11 @@ class CombatBot:
         elif f <= 50:
             self.pdebug(f'WARNING: Food at {f}%. Stopping current activity.',1)
             self.stopActivity = True
+            self.dangerType = "out of food"
+
+        # Check if damage is from lava 
+
+        # Check for air
 
     def healToFull(self):
         if self.bot.health == 20 and self.bot.food > 18:

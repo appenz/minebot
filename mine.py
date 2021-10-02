@@ -132,6 +132,17 @@ class MineBot:
     def __init__(self):
         print('mining ', end='')
 
+    # Checks if walking to a specific block is considered safe
+
+    def mining_safety_check(self,position):
+        n = self.bot.blockAt(position).displayName
+        if n in self.block_will_flow:
+            self.stopActivity = True
+            self.dangerType = "danger: "+n
+            self.pdebug(f'danger: standing in {n}, aborting mining',1)
+            return False
+        return True
+
     #
     # Mine a block with the right tool
     # Takes a Vector or x,y,z as input
@@ -144,10 +155,13 @@ class MineBot:
         
         b = self.bot.blockAt(v)
 
+
         if b.digTime(274) > 100 and b.displayName not in self.ignored_blocks:
             # Ok, this looks mineable
             # Try 20 times, in case gravel is dropping down
             for attempts in range(0,20):
+                if not self.mining_safety_check(self.bot.entity.position): return 0
+
                 self.pdebug(f'    mine   ({v.x},{v.y},{v.z}) {b.displayName} t:{b.digTime(274)}',3)
 
                 # Check for the right tool
@@ -231,6 +245,8 @@ class MineBot:
                 print("  *** error, can't clear this column.")
                 self.stopActivity = True
                 return False
+
+            if not self.mining_safety_check(c): return 0
 
             self.safeWalk(c,0.3)
 
@@ -460,7 +476,7 @@ class MineBot:
     #
 
     def mineRow(self, area, max_x, height, z, floor_mine=0, ceiling_mine=0):
-        print(f'mineRow(max_x:{max_x},height:{height},z:{z},floor_mine:{floor_mine},ceiling_mine:{ceiling_mine})')
+        #print(f'mineRow(max_x:{max_x},height:{height},z:{z},floor_mine:{floor_mine},ceiling_mine:{ceiling_mine})')
         if max_x == 0:
             return False
         elif max_x < 0:
@@ -491,6 +507,7 @@ class MineBot:
                         self.pdebug(f'    cant reach, bridging failed {area.blockAt(x,-1,z).displayName}.',2)
                         area.walkToBlock3(0,0,z)
                         return False
+            if not self.mining_safety_check(area.toWorld(x,0,z)): return False
             area.walkToBlock3(x,0,z)
         time.sleep(0.5)
         return True
@@ -508,6 +525,8 @@ class MineBot:
         area = workArea(self,width,height,99999)
         area.status = "---"
 
+        self.speedMode = True   # explore fast until we find something
+
         while not self.stopActivity:
             # Get ready
 
@@ -519,7 +538,11 @@ class MineBot:
                 return False
 
             while area.blocks_mined-area.last_break < break_interval and not self.stopActivity:
+                
+                if not self.mining_safety_check(area.toWorld(0,0,z)): break
                 area.walkToBlock3(0,0,z-1)
+
+                if area.blocks_mined > 0: self.speedMode = False
 
                 # Step 0 - Check if we are still good
                 if not self.checkMinimumList(self.miningMinimumList):
@@ -569,9 +592,14 @@ class MineBot:
                 z += 1
                 
             # ...and back to the chest to update sign and restock
+            self.speedMode = False
             self.eatFood()
             area.walkToStart()
-            txt = [f'Mine {area.directionStr()} {width}x{height}', f'Length: {z}', myDate(), area.status ]
+            if self.dangerType:
+                s = self.dangerType
+            else:
+                s = area.status
+            txt = [f'Mine {area.directionStr()} {width}x{height}', f'Length: {z}', myDate(), s ]
             self.updateSign(txt,tryonly=True)
 
         # Mining ended

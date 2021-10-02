@@ -39,7 +39,14 @@ class workArea:
 
         # Determine "forward" direction from chest+torch
         self.start_chest = pybot.findClosestBlock("Chest",xz_radius=3,y_radius=1)
-        self.start_torch = pybot.findClosestBlock("Torch",xz_radius=3,y_radius=1)
+        torch   = pybot.findClosestBlock("Torch",xz_radius=3,y_radius=1)
+        r_torch = pybot.findClosestBlock("Redstone Torch",xz_radius=3,y_radius=1)
+
+        # Redstone Torch has precedence
+        if r_torch:
+            self.start_torch = r_torch
+        else:
+            self.torch = r_torch
 
         if not self.start_chest or not self.start_torch:
             print("Can't find starting position. Place chest, and torch on the ground next to it to mark the direction.")

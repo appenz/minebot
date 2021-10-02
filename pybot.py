@@ -8,6 +8,7 @@
 import javascript
 from javascript import require, On, Once, AsyncTask, once, off
 import time
+import asyncio
 
 from inventory import *
 from movement import *
@@ -34,6 +35,11 @@ class PyBot(ChatBot, FarmBot, MineBot, GatherBot, BuildBot, CombatBot, MovementM
         self.callsign = self.account['user'][0:2]+":"
         self.debug_lvl = 3
         self.lastException = None
+
+        self.stopActivity = False
+        self.dangerType = None
+
+        self.speedMode = False # Move fast 
 
         mineflayer = require('mineflayer')
 

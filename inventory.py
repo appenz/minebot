@@ -10,36 +10,55 @@ foodList = [
   "Bread"
 ]
 
+def js_Minecart_With_Chest(entity):
+    if entity.name == "chest_minecart":
+        return True
+    else:
+        return False
+
 class Chest:
 
-    def __init__(self,pybot):
+    def __init__(self,pybot,chesttype="Chest",silent=False):
         self.pybot = pybot
-        self.block = self.pybot.findClosestBlock("Chest",2)
-        self.chestObj = None
-        if self.block == None:
-            self.pybot.error("Can't find any chest nearby.")
-            return
+
+        # How we find it depends on the type:
+        # Chests are blocks
+        if chesttype == "Chest":
+            self.object = self.pybot.findClosestBlock(chesttype,2)
+            self.chestType = chesttype
+        # Minecarts are entities
+        elif chesttype == "Minecart with Chest":
+            self.object = pybot.bot.nearestEntity(js_Minecart_With_Chest)
+            if self.object:
+                if lenVec3(subVec3(self.object.position, self.pybot.bot.entity.position)) > 3:
+                    self.object = None 
+            self.chestType = chesttype
+        if self.object == None:
+            if not silent:
+                self.pybot.perror(f'Cant find any {chesttype} nearby.')
+        self.container = None
 
     def open(self):
-            if self.chestObj:
+            if self.container:
                 return True
-            self.chestObj = self.pybot.bot.openChest(self.block)
-            if not self.chestObj:
+            #print(self.object)
+            self.container = self.pybot.bot.openContainer(self.object)
+            if not self.container:
                 self.pybot.perror("Can't open chest.")
                 return False
             time.sleep(0.2)
             return True
 
     def close(self):
-            self.chestObj.close()
-            self.chestObj = None
+            self.container.close()
+            self.container = None
 
     def spaceAvailable(self):
         if self.open():
-            chest_size = self.chestObj.inventoryStart
+            chest_size = self.container.inventoryStart
             empty = chest_size
             # count empty slots in chest
-            for s in self.chestObj.slots:
+            for s in self.container.slots:
                 if s != None and s.slot < chest_size:
                     empty -= 1
             return empty
@@ -50,7 +69,7 @@ class Chest:
         if self.open():
             self.pybot.pdebug(f'Chest contents:', debug_lvl)
             empty = True
-            for i in self.chestObj.containerItems():
+            for i in self.container.containerItems():
                 empty = False
                 self.pybot.pdebug(f'  {i.count:2} {i.displayName}', debug_lvl)
             if empty:
@@ -66,7 +85,7 @@ class Chest:
         item_type, item_name = self.pybot.itemTypeAndName(item_arg)
 
         count = 0
-        inventory = self.chestObj.containerItems()
+        inventory = self.container.containerItems()
         if inventory != []:
             # Count how many items we have of this type
             for i in inventory:
@@ -90,9 +109,9 @@ class Chest:
 
         self.pybot.pdebug(f'  > {count:2} x {item_name}   ({item_type})',3)
         try:
-            newChest = self.chestObj.deposit(item_type,None,count)
+            newChest = self.container.deposit(item_type,None,count)
             if newChest:
-                self.chestObj = newChest
+                self.container = newChest
         except Exception as e:
             self.pybot.pexception(f'depositing {count} of item {item_name} type {item_type}',e)
             return False
@@ -110,9 +129,9 @@ class Chest:
             
         self.pybot.pdebug(f'  < {count} x {item_name}   ({item_type})',3)
         try:
-            newChest = self.chestObj.withdraw(item_type,None,count)
+            newChest = self.container.withdraw(item_type,None,count)
             if newChest:
-                self.chestObj = newChest
+                self.container = newChest
         except Exception as e:
             self.pybot.pexception(f'*** withdrawing {count} of item {item_name} ({count_max} left)',e)
             return False
@@ -127,7 +146,7 @@ class Chest:
             self.pybot.perror('Cant open chest to deposit Items.')
             return False
         empty_slots = self.spaceAvailable()
-        self.pybot.pdebug(f'Depositing ({empty_slots}/{self.chestObj.inventoryStart} free):',3)
+        self.pybot.pdebug(f'Depositing ({empty_slots}/{self.container.inventoryStart} free):',3)
         itemList = self.pybot.bot.inventory.items()
         for i in itemList:
             if whitelist != [] and i.displayName not in whitelist:
@@ -166,6 +185,7 @@ class Chest:
                 for i in invList:
                     if i.displayName == name:
                         count = min(i.count,dn)
+                        print(f'res {i.displayName} i:{n_inv} g:{n_goal} slt:{i.count} -> dep:{count}')
                         if count > 0:
                             self.depositItem(i.type,count)
                             nothing = False
@@ -176,10 +196,11 @@ class Chest:
                 # withdraw
                 dn = n_goal-n_inv
 
-                for i in self.chestObj.containerItems():
+                for i in self.container.containerItems():
                     if i.displayName == name:
                         count = min(i.count,dn)
                         if count > 0:
+                            print(f'res {i.displayName} i:{n_inv} g:{n_goal} slt:{i.count} -> draw:{count}')
                             self.withdrawItem(i.type,count)
                             nothing = False
                             dn -= count
@@ -236,7 +257,7 @@ class InventoryManager:
 
     def checkMinimumList(self, items):
         for i in items:
-            print(i, self.invItemCount(i), items[i])
+            #print(i, self.invItemCount(i), items[i])
             if self.invItemCount(i) < items[i]:
                 self.pdebug(f'Insufficient Items: {i} {self.invItemCount(i)}/{items[i]}',1)
                 return False
@@ -328,6 +349,7 @@ class InventoryManager:
             self.perror(f'cant find item {item_name} ({item_type}) to wield.')
             return None
 
+        time.sleep(0.25)
         # Am I already holding it?
         if self.checkInHand(item_type):
             return item_name
@@ -349,6 +371,7 @@ class InventoryManager:
             else:
                 break
 
+        time.sleep(0.25)
         if not self.checkInHand(item_name):
             self.perror(f'Wielding item {item_name} failed after max retires!')
             return None
@@ -502,6 +525,14 @@ class InventoryManager:
     #
 
     def restockFromChest(self, itemList):
+        
+        # If we have both cart and chest we deposit into cart
+        # and then restock from chest
+        cart = Chest(self,"Minecart with Chest",silent=True)
+        if cart.object:
+            cart.restock(itemList)
+            cart.close()
+            time.sleep(1)
         chest = Chest(self)
         chest.restock(itemList)
         chest.close()

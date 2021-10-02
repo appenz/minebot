@@ -58,6 +58,8 @@ class ChatBot:
         self.activity_name = name
         self.stopActivity = False
         self.activity_major = True
+        self.dangerType = None 
+        self.speedMode = False
 
     def endActivity(self):
         if self.activity_major:

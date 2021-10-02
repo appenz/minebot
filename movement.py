@@ -50,7 +50,8 @@ class MovementManager:
             print(f'*** error in safeWalk {e}')
             return False
         t = walkTime(toPosition,self.bot.entity.position)
-        time.sleep(t)
+        if not self.speedMode:
+             time.sleep(t)
         return True
 
     def walkTo(self,x,y=None,z=None):
