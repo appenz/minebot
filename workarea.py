@@ -46,7 +46,7 @@ class workArea:
         if r_torch:
             self.start_torch = r_torch
         else:
-            self.torch = r_torch
+            self.start_torch = torch
 
         if not self.start_chest or not self.start_torch:
             print("Can't find starting position. Place chest, and torch on the ground next to it to mark the direction.")

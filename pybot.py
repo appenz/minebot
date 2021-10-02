@@ -9,6 +9,7 @@ import javascript
 from javascript import require, On, Once, AsyncTask, once, off
 import time
 import asyncio
+import argparse
 
 from inventory import *
 from movement import *
@@ -18,6 +19,7 @@ from build import *
 from chat import *
 from combat import *
 from gather import *
+
 
 #
 # Main Bot Class
@@ -42,8 +44,6 @@ class PyBot(ChatBot, FarmBot, MineBot, GatherBot, BuildBot, CombatBot, MovementM
         self.speedMode = False # Move fast 
 
         mineflayer = require('mineflayer')
-
-        print("pybot - a smart minecraft bot by Guido and Daniel Appenzeller.")
 
         bot = mineflayer.createBot(
             {
@@ -70,6 +70,8 @@ class PyBot(ChatBot, FarmBot, MineBot, GatherBot, BuildBot, CombatBot, MovementM
 
         # Initialize modules
         # Python makes this hard as __init__ of mixin classes is not called automatically
+
+        print(f'pybot - a smart minecraft bot by Guido and Daniel Appenzeller.')
 
         classes = PyBot.mro()
         print('  modules: ', end='')
@@ -105,43 +107,65 @@ class PyBot(ChatBot, FarmBot, MineBot, GatherBot, BuildBot, CombatBot, MovementM
         if self.debug_lvl > 0:
             print(message)
 
-    def pdebug(self,message,lvl=4):
+    def pdebug(self,message,lvl=4,end="\n"):
         if self.debug_lvl >= lvl:
-            print(message)
+            print(message,end=end)
 
-# Import credentials and server info, create the bot and log in
-from account import account
-pybot = PyBot(account.account)
-print(f'Connected to server {account.account["host"]}.')
-
-# Import list of known locations. Specific to the world.
-if account.locations:
-    pybot.myLocations = account.locations
+    def mainloop(self):
+        pass
 
 #
-# Main Loop - We are driven by chat commands
+# Run the bot. 
+# Note that we can run with or without UI
 #
 
-# Report status
-print(f'My boss is {pybot.bossPlayer}. Others can send commands to me with prefix "{pybot.callsign}"')
-while not pybot.bot.health:
-    time.sleep(1)
-pybot.sayStatus()
+if __name__ == "__main__":
 
-@On(pybot.bot, 'chat')
-def onChat(sender, message, this, *rest):
-    pybot.handleChat(sender, message, this, *rest)
+    parser = argparse.ArgumentParser(prog='python pybot.py')
+    parser.add_argument('--nowindow', action='store_true', help='run in the background, i.e. without the Tk graphical UI')
+    parser.add_argument('--verbose', '-v', action='count', default=0, help='verbosity from 1-5. Use as -v, -vv, -vvv etc.')
+    args = parser.parse_args()
+    argsd = vars(args)
 
-@On(pybot.bot, 'health')
-def onHealth(arg):
-    pybot.healthCheck()
+    # Import credentials and server info, create the bot and log in
+    from account import account
+    if  argsd["nowindow"]:
+        pybot = PyBot(account.account)
+    else:
+        from ui import PyBotWithUI
+        pybot = PyBotWithUI(account.account)
+    pybot.pdebug(f'Connected to server {account.account["host"]}.',0)
 
-pybot.healToFull()
+    # Import list of known locations. Specific to the world.
+    if account.locations:
+        pybot.myLocations = account.locations
 
-if pybot.debug_lvl >= 4:
-    pybot.printInventory()
-print(f'Ready.')
+    #
+    # Main Loop - We are driven by chat commands
+    #
 
-# The spawn event
-once(pybot.bot, 'login')
-pybot.bot.chat('Bot '+pybot.bot.callsign+' joined.')
+    # Report status
+    while not pybot.bot.health:
+        time.sleep(1)
+
+    # Start-up. Init UI if we were launched with UI
+    pybot.sayStatus()
+
+    @On(pybot.bot, 'chat')
+    def onChat(sender, message, this, *rest):
+        pybot.handleChat(sender, message, this, *rest)
+
+    @On(pybot.bot, 'health')
+    def onHealth(arg):
+        pybot.healthCheck()
+
+    pybot.healToFull()
+
+    if pybot.debug_lvl >= 4:
+        pybot.printInventory()
+    pybot.pdebug(f'Ready.',0)
+
+    pybot.mainloop()
+    # The spawn event
+    #once(pybot.bot, 'login')
+    #pybot.bot.chat('Bot '+pybot.bot.callsign+' joined.')

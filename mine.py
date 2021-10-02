@@ -139,7 +139,7 @@ class MineBot:
         if n in self.block_will_flow:
             self.stopActivity = True
             self.dangerType = "danger: "+n
-            self.pdebug(f'danger: standing in {n}, aborting mining',1)
+            self.pdebug(f'danger: {n}, aborting mining',1)
             return False
         return True
 

@@ -185,7 +185,7 @@ class Chest:
                 for i in invList:
                     if i.displayName == name:
                         count = min(i.count,dn)
-                        print(f'res {i.displayName} i:{n_inv} g:{n_goal} slt:{i.count} -> dep:{count}')
+                        #print(f'res {i.displayName} i:{n_inv} g:{n_goal} slt:{i.count} -> dep:{count}')
                         if count > 0:
                             self.depositItem(i.type,count)
                             nothing = False
@@ -200,7 +200,7 @@ class Chest:
                     if i.displayName == name:
                         count = min(i.count,dn)
                         if count > 0:
-                            print(f'res {i.displayName} i:{n_inv} g:{n_goal} slt:{i.count} -> draw:{count}')
+                            #print(f'res {i.displayName} i:{n_inv} g:{n_goal} slt:{i.count} -> draw:{count}')
                             self.withdrawItem(i.type,count)
                             nothing = False
                             dn -= count
@@ -373,7 +373,7 @@ class InventoryManager:
 
         time.sleep(0.25)
         if not self.checkInHand(item_name):
-            self.perror(f'Wielding item {item_name} failed after max retires!')
+            self.perror(f'Wielding item {item_name} failed after max retries!')
             return None
 
         return item_name
@@ -417,7 +417,7 @@ class InventoryManager:
             txt = ["",txt_arg,"",""]
         
         # Total hack, should use block tags...
-        sign_block = self.findClosestBlock("Spruce Wall Sign",2)
+        sign_block = self.findClosestBlock("Spruce Wall Sign",4)
         if not sign_block:
             if not tryonly:
                 self.perror('cant find any sign close by to update.')

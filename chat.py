@@ -51,9 +51,9 @@ class ChatBot:
 
     def startActivity(self, name):
         t_str = botlib.myTime()
-        print(60*'-')
-        print(f'  {name:47} {t_str}')
-        print(60*'-')
+        self.pdebug(60*'-',1)
+        self.pdebug(f'{name:47} {t_str}',1)
+        self.pdebug(60*'-',1)
         self.activity_start = time.time()
         self.activity_name = name
         self.stopActivity = False
@@ -65,7 +65,7 @@ class ChatBot:
         if self.activity_major:
             t_str = botlib.myTime()
             d_str = str(datetime.timedelta(seconds=int(time.time()-self.activity_start)))
-            print(f'Activity {self.activity_name} ended at {t_str} (duration: {d_str})')
+            self.pdebug(f'Activity {self.activity_name} ended at {t_str} (duration: {d_str})',1)
             self.bot.clearControlStates('sneak', False)
             self.eatFood()
         self.bot.stopActivity = True
@@ -85,7 +85,6 @@ class ChatBot:
         bed = self.findClosestBlock("White Bed",xz_radius=3,y_radius=1)
         if not bed:
             self.chat('cant find a White Bed nearby (I only use those)')
-            print("*** error, can't find a White Bed nearby")
         else:
             self.bot.sleep(bed)
             self.chat('good night!')
@@ -128,7 +127,7 @@ class ChatBot:
             if c[2]:
                 # Major activity
                 if self.activity_major:
-                    print(f'*** error: major activity in progress, stop it first {self.activity_name}.')
+                    self.pdebug(f'*** error: major activity in progress, stop it first {self.activity_name}.')
                     return
                 self.startActivity(c[1])
                 @AsyncTask(start=True)
