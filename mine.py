@@ -523,15 +523,14 @@ class MineBot:
         z_torch = 0
         z =0
         area = workArea(self,width,height,99999)
-        area.status = "---"
-
+        if not area.valid:
+            return False
         self.speedMode = True   # explore fast until we find something
 
         while not self.stopActivity:
             # Get ready
 
             area.restock(self.miningEquipList)
-            self.eatFood()
             area.last_break = area.blocks_mined
             time.sleep(1)
             if not self.checkMinimumList(self.miningMinimumList):
@@ -593,7 +592,6 @@ class MineBot:
                 
             # ...and back to the chest to update sign and restock
             self.speedMode = False
-            self.eatFood()
             area.walkToStart()
             if self.dangerType:
                 s = self.dangerType

@@ -111,7 +111,21 @@ class PyBot(ChatBot, FarmBot, MineBot, GatherBot, BuildBot, CombatBot, MovementM
         if self.debug_lvl >= lvl:
             print(message,end=end)
 
+    # Dummy functions, they get overriden by the GUI if we have it
+
     def mainloop(self):
+        pass
+
+    def refreshInventory(self):
+        pass
+
+    def refreshEquipment(self):
+        pass
+
+    def refreshStatus(self):
+        pass
+
+    def refreshActivity(self, txt):
         pass
 
 #
@@ -148,8 +162,10 @@ if __name__ == "__main__":
     while not pybot.bot.health:
         time.sleep(1)
 
-    # Start-up. Init UI if we were launched with UI
-    pybot.sayStatus()
+    pybot.refreshStatus()
+    pybot.refreshInventory()
+    pybot.refreshEquipment()
+    pybot.refreshActivity("No Activity")
 
     @On(pybot.bot, 'chat')
     def onChat(sender, message, this, *rest):

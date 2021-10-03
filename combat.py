@@ -19,6 +19,7 @@ class CombatBot:
         h = 100*self.bot.health/20
         f = 100*self.bot.food/20
 
+        self.refreshStatus()
         self.pdebug(f'    health: {h}%   food: {f}%',4)    
 
         if self.healMode:

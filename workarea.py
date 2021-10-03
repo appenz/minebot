@@ -20,12 +20,12 @@ class workArea:
     # Initialize a work area
     #
 
-    def __init__(self,pybot,width,height,depth):
+    def __init__(self,pybot,width,height,depth, notorch=False):
         self.valid = False
         self.pybot = pybot
 
         if width % 2 != 1:
-            print(f'Error: width={width} but only odd width work areas are supported.')
+            self.pybot.perror(f'Error: width={width} but only odd width work areas are supported.')
             return None
 
         self.width = width
@@ -33,36 +33,47 @@ class workArea:
         self.height = height
         self.depth = depth
 
-        self.status = "new"
+        self.status = "---"
         self.blocks_mined = 0
         self.last_break = 0
 
-        # Determine "forward" direction from chest+torch
         self.start_chest = pybot.findClosestBlock("Chest",xz_radius=3,y_radius=1)
-        torch   = pybot.findClosestBlock("Torch",xz_radius=3,y_radius=1)
-        r_torch = pybot.findClosestBlock("Redstone Torch",xz_radius=3,y_radius=1)
 
-        # Redstone Torch has precedence
-        if r_torch:
-            self.start_torch = r_torch
+        if not self.start_chest:
+            self.pybot.chat("Can't find starting position. Place a chest on the ground to mark it.")
+            return None
+
+        if notorch:
+            # Area with arbitrary direction, we pick point in front of chest
+            p = self.start_chest.getProperties()
+            self.d = strDirection(p["facing"])
+            self.start = addVec3(self.start_chest.position,self.d)
         else:
-            self.start_torch = torch
+            # Determine "forward" direction from chest+torch
+            torch   = pybot.findClosestBlock("Torch",xz_radius=3,y_radius=1)
+            r_torch = pybot.findClosestBlock("Redstone Torch",xz_radius=3,y_radius=1)
 
-        if not self.start_chest or not self.start_torch:
-            print("Can't find starting position. Place chest, and torch on the ground next to it to mark the direction.")
-            return None
+            # Redstone Torch has precedence
+            if r_torch:
+                self.start_torch = r_torch
+            else:
+                self.start_torch = torch
 
-        if self.start_torch.position.y != self.start_chest.position.y:
-            print("Can't find starting position. Chest and torch at different levels??")
-            return None
+            if not self.start_torch:
+                self.pybot.chat("Can't find starting position. Place chest, and torch on the ground next to it to mark the direction.")
+                return None
 
-        # Direction of the Area
-        self.d = subVec3(self.start_torch.position, self.start_chest.position)
-        if lenVec3(self.d) != 1:
-            print("Torch is not next to chest.")
-            return None
+            if self.start_torch.position.y != self.start_chest.position.y:
+                self.pybot.chat("Can't find starting position. Chest and torch at different levels??")
+                return None
 
-        self.start = self.start_chest.position
+            # Direction of the Area
+            self.d = subVec3(self.start_torch.position, self.start_chest.position)
+            if lenVec3(self.d) != 1:
+                self.pybot.chat("Can't find starting position. Torch is not next to chest.")
+                return None
+
+            self.start = self.start_chest.position
 
         # Origin
         self.origin = Vec3(self.start.x+2*self.d.x,self.start.y,self.start.z+2*self.d.z)
@@ -175,11 +186,12 @@ class workArea:
     # Walk back to Torch
 
     def walkToStart(self):
-        self.pybot.walkToBlock3(self.start_torch.position)        
+        self.pybot.walkToBlock3(self.start)        
 
     # Restock from Chest
 
     def restock(self, item_list):
         self.walkToStart()
         self.pybot.restockFromChest(item_list)
+        self.pybot.eatFood()
 

@@ -4,6 +4,7 @@
 
 from inventory import *
 from botlib import *
+from workarea import *
 
 class BoundingBox:
 
@@ -148,24 +149,13 @@ class GatherBot:
 
     def chopWood(self):
 
-        start_chest = Chest(self)
-        if not start_chest.block:
-            self.perror('Please start chopping trees near a chest.')
-            return False
-        start_pos = start_chest.block.position
+        area = workArea(self,1,1,1,notorch=True)
+        if area.valid:            
+            while not self.stopActivity:                
+                area.restock(self.chopEquipList)
+                if not self.chopBigTree():
+                    break
 
-        while not self.stopActivity:                
-            # Deposit
-            self.walkTo(start_pos)
-            start_chest.restock(self.chopEquipList)
-            start_chest.close()
-            self.eatFood()
-
-            if not self.chopBigTree():
-                break
-
-        self.walkTo(start_pos)
-        start_chest.restock(self.chopEquipList)
-        start_chest.close()
+        area.restock(self.chopEquipList)
         self.endActivity()
         return True

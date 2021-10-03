@@ -64,6 +64,20 @@ def directionStr(v):
         else:
             return "North"
 
+def strDirection(d_str):
+    d = d_str.lower()[0]
+    if   d == 'n':
+        return Vec3(0,0,-1)
+    elif d == 's':
+        return Vec3(0,0, 1)
+    elif d == 'e':
+        return Vec3(1,0, 0)
+    elif d == 'w':
+        return Vec3(-1,0,0)
+    else:
+        return None                
+
+
 def distanceVec3(v1,v2):
     if not v1:
         print("*** error: v1 in distanceVec3() is null.")
@@ -137,6 +151,17 @@ def directionToVector(block):
     else:
         return False
 
+# Return a color based on current/max
+
+def colorHelper(x,max):
+    if x/max > 0.95:
+        return "white","green"
+    elif x/max > 0.75:
+        return "black","yellow"
+    elif x/max > 0.5:
+        return "black","orange"
+    else:
+        return "white","red"
 
 
 

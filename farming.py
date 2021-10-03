@@ -8,6 +8,7 @@ pathfinder = require('mineflayer-pathfinder')
 
 from inventory import *
 from botlib import *
+from workarea import *
 import time
 
 class FarmBot:
@@ -44,15 +45,12 @@ class FarmBot:
         max_range = 25
         up = Vec3(0, 1, 0)
 
-        # Setup. Find the chest and restock
-        start_chest = Chest(self)
-        if not start_chest.block:
-            self.perror('Please start farming near a chest.')
+        area = workArea(self,1,1,1,notorch=True)
+        if not area.valid:
             self.endActivity()
             return False
-        start_pos = start_chest.block.position
-        start_chest.restock(self.farmingEquipList)
-        start_chest.close()
+        area.restock(self.farmingEquipList)
+        self.eatFood()
 
         # Main loop. Keep farming until told to stop.
 
@@ -85,7 +83,7 @@ class FarmBot:
                 for t in range(0,break_interval):
                     if self.stopActivity:
                         break
-                    b = self.findSoil(start_pos,max_range)
+                    b = self.findSoil(area.origin,max_range)
                     if b:
                         self.walkOnBlock(b)
                         if not self.checkInHand(crop):
@@ -104,10 +102,8 @@ class FarmBot:
                 self.pdebug('  no plantable seeds in inventory.',2)
 
             # Deposit
-            self.walkTo(start_pos)
-            start_chest.restock(self.farmingEquipList)
-            start_chest.close()
-            time.sleep(0.5)
+            area.walkToStart()
+            area.restock(self.farmingEquipList)
             self.eatFood()
 
             if not self.stopActivity:
@@ -115,7 +111,7 @@ class FarmBot:
                     time.sleep(0.5)
                 else:
                     self.pdebug('Nothing to do, taking a break.',2)
-                    self.safeSleep(60)
+                    self.safeSleep(30)
 
         self.endActivity()
         return True
