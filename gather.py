@@ -61,7 +61,7 @@ class BoundingBox:
 class GatherBot:
 
     chopEquipList = {
-      "Stone Axe":8,
+      "Stone Axe":5,
       "Spruce Log":0,
       "Spruce Sapling":0,
       "Stick":0,
@@ -90,7 +90,10 @@ class GatherBot:
 
     def chopBigTree(self):
         self.pdebug(f'Looking for tree block...',3)
+        self.refreshActivity([' ❓ searching: giant spruce'])
         b0 = self.findClosestBlock("Spruce Log",xz_radius=25,y_radius=1)
+        if self.stopActivity:
+            return False
         if not b0:
             self.perror('Cant find any tree to chop down nearby')
             return False
@@ -101,6 +104,7 @@ class GatherBot:
             self.perror(f'Tree has wrong dimensions {box.dx()} x {box.dy()} x {box.dz()}')
             return False
         
+        self.refreshActivity([f'🌲 Tree at {b0.position.x},{b0.position.z}',f'  height: {box.dy()}'])
         self.pdebug(f'Found big tree of height {box.dy()}',2)
 
         self.walkToBlock(box.x_min-1, box.y_min, box.z_min-1)
@@ -116,15 +120,19 @@ class GatherBot:
         while True:
             self.chop(x0,y+1, z0,3)
             self.walkOnBlock(x0,y,z0)
+            self.refreshActivity([f'🌲 Tree at {b0.position.x},{b0.position.z}',f'  height: {box.dy()}',f'  y: {y-box.y_min}','  ⬆️ heading up'])
             time.sleep(0.5)
             self.chop(x0+1,y+2, z0,3)
             self.walkOnBlock(x0+1,y+1,z0)
+            self.refreshActivity([f'🌲 Tree at {b0.position.x},{b0.position.z}',f'  height: {box.dy()}',f'  y: {y-box.y_min+1}','  ⬆️ heading up'])
             time.sleep(0.5)
             self.chop(x0+1,y+3, z0+1,3)
             self.walkOnBlock(x0+1,y+2,z0+1)
+            self.refreshActivity([f'🌲 Tree at {b0.position.x},{b0.position.z}',f'  height: {box.dy()}',f'  y: {y-box.y_min+2}','  ⬆️ heading up'])
             time.sleep(0.5)
             self.chop(x0,y+4, z0+1,3)
             self.walkOnBlock(x0,y+3,z0+1)
+            self.refreshActivity([f'🌲 Tree at {b0.position.x},{b0.position.z}',f'  height: {box.dy()}',f'  y: {y-box.y_min+3}','  ⬆️ heading up'])
             time.sleep(0.5)
             if y+8 >= box.y_max:
                 break
@@ -143,6 +151,7 @@ class GatherBot:
             self.chop(x0+1,y, z0+1, 1)
             self.chop(x0,  y, z0+1, 1)
             y = y - 1
+            self.refreshActivity([f'🌲 Tree at {b0.position.x},{b0.position.z}',f'  height: {box.dy()}',f'  y: {y-box.y_min}','  ⬇️ heading down'])
             self.healToFull()
 
         return True
@@ -155,7 +164,7 @@ class GatherBot:
                 area.restock(self.chopEquipList)
                 if not self.chopBigTree():
                     break
-
+        self.refreshActivity(['Restocking'])
         area.restock(self.chopEquipList)
         self.endActivity()
         return True

@@ -19,7 +19,8 @@ class FarmBot:
 
     farmingEquipList = {
       "Wheat Seeds":64,
-      "Wheat":0
+      "Wheat":0,
+      "Bread":5,
     }
 
     def __init__(self):
@@ -62,8 +63,10 @@ class FarmBot:
             for t in range(0,break_interval):
                 if self.stopActivity:
                     break
+                self.refreshActivity(['Harvesting',' ❓ searching for crops'])
                 b = self.findHarvestable(max_range)
                 if b and not self.stopActivity:
+                    self.refreshActivity(['Harvesting',f' ✅ found {b.displayName}'])
                     self.walkToBlock(b)
                     self.pdebug(f'  {b.displayName}  ({b.position.x}, {b.position.z}) ',3)
                     try:
@@ -73,20 +76,24 @@ class FarmBot:
                     #time.sleep(0.2)
                 else:
                     self.pdebug('  no more harvestable crops',2)
+                    self.refreshActivity(['Harvesting',' ❌ no more harvestable crops.'])
                     long_break += 1
                     break
 
             # Plant
-            print("Planting:")
+            self.pdebug(f'Planting.',2)
             crop = self.wieldItemFromList(self.farming_seeds)
             if crop:
                 for t in range(0,break_interval):
                     if self.stopActivity:
                         break
+                    self.refreshActivity(['Planting',' ❓ searching for soil'])
                     b = self.findSoil(area.origin,max_range)
+                    self.refreshActivity(['Planting',f' ✅ found empty soil'])
                     if b:
                         self.walkOnBlock(b)
                         if not self.checkInHand(crop):
+                            self.refreshActivity(['Planting',f' ❌ no seeds for {crop}'])
                             self.pdebug(f'Out of seeds of type {crop}.',2)
                             break
                         self.pdebug(f'  {crop} ({b.position.x}, {b.position.z})',3)
@@ -95,10 +102,12 @@ class FarmBot:
                         except Exception as e:
                             self.pexception("error while planting:",e)
                     else:
+                        self.refreshActivity(['Planting',f' ❌ no more empty soil'])
                         self.pdebug('  no more empty soil',3)
                         long_break += 1
                         break
             else:
+                self.refreshActivity(['Planting',f' ❌ no more seeds'])
                 self.pdebug('  no plantable seeds in inventory.',2)
 
             # Deposit
@@ -110,6 +119,7 @@ class FarmBot:
                 if long_break < 2:
                     time.sleep(0.5)
                 else:
+                    self.refreshActivity(['Taking a break.'])
                     self.pdebug('Nothing to do, taking a break.',2)
                     self.safeSleep(30)
 

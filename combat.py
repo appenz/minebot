@@ -58,7 +58,8 @@ class CombatBot:
             if self.bot.health > h:
                 self.pdebug(f'  health: {int(100*self.bot.health/20)}%   food: {int(100*self.bot.food/20)}%',3)
                 h = self.bot.health
-            self.eatFood()
+            if not self.eatFood():
+                break
             time.sleep(2)
         self.pdebug(f'  health: {int(100*self.bot.health/20)}%   food: {int(100*self.bot.food/20)}%',3)
         self.pdebug(f'done.',2)

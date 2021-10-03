@@ -6,6 +6,7 @@ import tkinter as tk
 import tkinter.scrolledtext
 from tkinter import ttk
 import time
+import datetime
 from javascript import require, On, Once, AsyncTask, once, off
 
 from pybot import PyBot
@@ -111,22 +112,35 @@ class PyBotWithUI(PyBot):
             oxygen = 20
 
         fg_c, bg_c = botlib.colorHelper(health,20)
-        h = tk.Label(self.statusUI, text = f'{int(100*health/20):>3}%  Health', bg=bg_c, fg=fg_c, width=130)
-        h.pack(side=tk.TOP, anchor="w", padx=5, pady=2 )
+        h = tk.Label(self.statusUI, text = f'{int(100*health/20):>3}%  Health', background=bg_c, foreground=fg_c, width=130)
+        h.pack(side=tk.TOP, anchor="w", padx=5, pady=1 )
 
         fg_c, bg_c = botlib.colorHelper(food,20)
-        f = tk.Label(self.statusUI, text = f'{int(100*food/20):>3}%  Food', bg=bg_c, fg=fg_c, width=130)
-        f.pack(side=tk.TOP, anchor="w", padx=5, pady=2)
+        f = tk.Label(self.statusUI, text = f'{int(100*food/20):>3}%  Food', background=bg_c, foreground=fg_c,  width=130)
+        f.pack(side=tk.TOP, anchor="w", padx=5, pady=1)
 
         fg_c, bg_c = botlib.colorHelper(oxygen,20)
-        o = tk.Label(self.statusUI, text = f'{int(100*oxygen/20):>3}%  Oxygen', bg=bg_c, fg=fg_c, width=130)
-        o.pack(side=tk.TOP, anchor="w", padx=5, pady=2)
+        o = tk.Label(self.statusUI, text = f'{int(100*oxygen/20):>3}%  Oxygen', background=bg_c, foreground=fg_c,  width=130)
+        o.pack(side=tk.TOP, anchor="w", padx=5, pady=1)
 
-    def uiEquipment(self,hand):
-        for widget in self.equipUI.winfo_children():
-            widget.destroy()
+    def refreshWorldStatus(self):
 
-        tk.Label(self.equipUI, text = f'    Hand: {hand}').pack(side=tk.TOP, anchor="w", padx=5)
+        t = self.bot.time.timeOfDay
+        h = (int(t/1000)+6) % 24
+        m = int( 60*(t % 1000)/1000)
+        time_str = f'{h:02}:{m:02}'
+        p = self.bot.entity.position
+        pos_str = f'x: {int(p.x)}   y: {int(p.y)}   z: {int(p.z)}'
+        if self.bot.time.isDay:
+            self.timeLabel.configure(text=f'  Time: 🌞 {time_str}', background="light grey", foreground="black")
+        else:
+            self.timeLabel.configure(text=f'  Time: 🌙 {time_str}', background="dark blue", foreground="white")
+
+        self.placeLabel.configure(text=f'  🧭  {pos_str}')
+
+        self.connLabel.configure(text=f'  🌐 {self.account["host"]}   {self.bot.player.ping} ms')
+
+        #tk.Label(self.equipUI, text = f'    Hand: {hand}').pack(side=tk.TOP, anchor="w", padx=5)
 
     def refreshInventory(self):
         inventory = self.bot.inventory.items()
@@ -140,19 +154,39 @@ class PyBotWithUI(PyBot):
         self.uiInventory(iList)
 
     def refreshEquipment(self):
-        i_type, item = self.itemInHand()
-        self.uiEquipment(item)
+        #i_type, item = self.itemInHand()
+        #self.uiEquipment(item)
         pass
 
     def refreshStatus(self):
         self.uiStatus(self.bot.health, self.bot.food, self.bot.oxygenLevel)
         pass
 
-    def refreshActivity(self, txt):
-        pass
+    def refreshActivity(self, txt):            
+        if self.activity_major == False:
+            status = f' ({self.activity_last_duration})'
+        elif self.stopActivity:
+            status = "🛑 Stop"
+        else:
+            status = str(datetime.timedelta(seconds=int(time.time()-self.activity_start)))
+        self.activityTitleLabel.configure(text=f'{self.activity_name} {status}')
+
+        if txt:
+            if isinstance(txt,str):
+                lines = [txt]
+            elif isinstance(txt,list):
+                lines = txt
+            else:
+                return
+            while len(lines) < 6:
+                lines.append("")
+            for i in range(0,6):
+                self.activityLine[i].configure(text=lines[i])
 
     def refresherJob(self):
         while True:
+            self.refreshActivity(None)
+            self.refreshWorldStatus()
             self.refreshEquipment()
             self.refreshStatus()
             self.refreshInventory()
@@ -167,37 +201,71 @@ class PyBotWithUI(PyBot):
 
         #  0 --------------------------------------------------------------------------------
 
-        self.statusUI = tk.LabelFrame(win, text='Status')
-        self.statusUI.place(x=20, y=10, width=200, height=100)
+        self.worldUI = ttk.LabelFrame(win, text='World Status')
+        self.worldUI.place(x=20, y=10, width=200, height=100)
 
-        self.equipUI = tk.LabelFrame(win, text='Equipment')
-        self.equipUI.place(x=20, y=120, width=200, height=100)
+        self.timeLabel = tk.Label(self.worldUI, text = f'  🌞 00:00', width=130)
+        self.timeLabel.pack(side=tk.TOP, anchor="w", padx=5)
 
-        self.activityUI = tk.LabelFrame(win, text='Activity')
+        self.placeLabel = ttk.Label(self.worldUI, text = f'  Location TBD')
+        self.placeLabel.pack(side=tk.TOP, anchor="w", padx=5, pady=2)
+
+        self.connLabel = ttk.Label(self.worldUI, text = f'  Not Connected')
+        self.connLabel.pack(side=tk.TOP, anchor="w", padx=5, pady=2)
+
+
+        # -
+
+        self.statusUI = ttk.LabelFrame(win, text='Player Status')
+        self.statusUI.place(x=20, y=120, width=200, height=100)
+
+        # -
+
+        self.activityUI = ttk.LabelFrame(win, text='Activity')
         self.activityUI.place(x=20, y=230, width=200, height=180)
 
-        # ---
+        self.activityTitleLabel = ttk.Label(self.activityUI, text = f'No Activity')
+        self.activityTitleLabel.pack(side=tk.TOP, anchor="w", padx=5)
 
-        self.areaUI = tk.LabelFrame(win, text='Area')
+        self.activityLine = [None,None,None,None,None,None]
+        for i in range(0,6):
+            self.activityLine[i] = ttk.Label(self.activityUI, text = f'')
+            self.activityLine[i].pack(side=tk.TOP, anchor="w", padx=5)
+
+        # -----------
+
+        self.areaUI = ttk.LabelFrame(win, text='Area')
         self.areaUI.place(x=240, y=10, width=200, height=400)
 
-        # ---
+        # -----------
 
-        self.invUI = tk.LabelFrame(win,text='Inventory')
+        self.invUI = ttk.LabelFrame(win,text='Inventory')
         self.invUI.place(x=460, y=10, width=200, height=400)
 
         # 10 --------------------------------------------------------------------------------
 
         ttk.Separator(win,orient='horizontal').place(x=0, y=430, width=680)
 
-        #self.commandUI = tk.Frame(frame)
-        #self.commandUI.place(relx=0, rely=0.7)
+        self.commandUI = ttk.Frame(win)
+        self.commandUI.place(x=10,y=440,width=660,height=100)
 
-        #self.botCmd = tk.StringVar()
-        #ttk.Label(self.commandUI, text="General Command:").grid(row=0, column=0,  columnspan = 5,  sticky="W")
-        #self.cmdEntry = ttk.Entry(self.commandUI, width=20, textvariable=self.botCmd)
-        #self.cmdEntry.grid(row=0, column=5, columnspan=20, sticky="EW")
-        #ttk.Button(self.commandUI, text="Go!", command=self.do_command).grid(row=0, column=25, columnspan=5, sticky="W")
+        ttk.Button(self.commandUI, text="Go!", command=self.do_command).grid(row=1, column=0, sticky="")
+        ttk.Button(self.commandUI, text="Go!", command=self.do_command).grid(row=1, column=1, sticky="")
+        ttk.Button(self.commandUI, text="Go!", command=self.do_command).grid(row=1, column=2, sticky="")
+        ttk.Button(self.commandUI, text="Go!", command=self.do_command).grid(row=1, column=3, sticky="")
+        ttk.Button(self.commandUI, text="Go!", command=self.do_command).grid(row=1, column=4, sticky="")
+        ttk.Button(self.commandUI, text="Go!", command=self.do_command).grid(row=1, column=5, sticky="")
+
+        self.cmdFrame = ttk.Frame(self.commandUI)
+        self.cmdFrame.grid(row=10, column=0, columnspan=30, sticky="we")
+
+        self.botCmd = tk.StringVar()
+        ttk.Label(self.cmdFrame, text="General Command:").grid(row=10, column=0,  columnspan = 5,  sticky="W")
+        self.cmdEntry = ttk.Entry(self.cmdFrame, width=20, textvariable=self.botCmd)
+        self.cmdEntry.grid(row=10, column=5, columnspan=20, sticky="EW")
+        ttk.Button(self.cmdFrame, text="Go!", command=self.do_command).grid(row=10, column=25, columnspan=5, sticky="W")
+
+
 
         # 20 --------------------------------------------------------------------------------
         
@@ -220,13 +288,17 @@ class PyBotWithUI(PyBot):
 
 if __name__ == "__main__":
     # Run in test mode
-
+    print("UI Test - Part of PyBot, the friendly Minecraft Bot.")
     pybot = PyBotWithUI.__new__(PyBotWithUI)
     pybot.initUI()
 
     items = MineBot.miningEquipList
 
     pybot.uiInventory(items)
+
+    pybot.uiStatus(20,15,10)
+    #pybot.uiEquipment("Stone Pickaxe")
+    pybot.refreshActivity(["Test1", "Test2", "Test3"])
 
     a = 1
     while True:

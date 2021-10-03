@@ -461,15 +461,17 @@ class InventoryManager:
     def eatFood(self):
         # Check if hungry
         if self.bot.food > 18:
-            return
+            return True
 
         # Wield food in hand
         foodname = self.wieldItemFromList(foodList)
         if foodname:
             print('eating food '+foodname)
             self.bot.consume()
+            return True
         else:
-            print(f'food level {int(100*self.bot.food/20)}, but no food in inventory!')
+            self.pdebug(f'food level {int(100*self.bot.food/20)}, but no food in inventory!',1)
+            return False
 
     #
     #  Chest Management

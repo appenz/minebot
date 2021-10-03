@@ -125,7 +125,7 @@ class PyBot(ChatBot, FarmBot, MineBot, GatherBot, BuildBot, CombatBot, MovementM
     def refreshStatus(self):
         pass
 
-    def refreshActivity(self, txt):
+    def refreshActivity(self,txt):
         pass
 
 #
@@ -162,20 +162,14 @@ if __name__ == "__main__":
     while not pybot.bot.health:
         time.sleep(1)
 
-    pybot.refreshStatus()
-    pybot.refreshInventory()
-    pybot.refreshEquipment()
-    pybot.refreshActivity("No Activity")
-
     @On(pybot.bot, 'chat')
     def onChat(sender, message, this, *rest):
+        pybot.healToFull()
         pybot.handleChat(sender, message, this, *rest)
 
     @On(pybot.bot, 'health')
     def onHealth(arg):
         pybot.healthCheck()
-
-    pybot.healToFull()
 
     if pybot.debug_lvl >= 4:
         pybot.printInventory()

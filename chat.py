@@ -11,12 +11,14 @@ pathfinder = require('mineflayer-pathfinder')
 
 class ChatBot:
 
+    stopActivity = True
+    activity_start = 0
+    activity_name = "None"
+    activity_major = False
+    activity_last_duration = 0
+
     def __init__(self):
         print('chat ', end='')
-        self.stopActivity = True
-        self.activity_start = 0
-        self.activity_name = "None"
-        self.activity_major = False
 
         # Command : [function, name, major activity flag, min_arguments]
 
@@ -68,6 +70,7 @@ class ChatBot:
             self.pdebug(f'Activity {self.activity_name} ended at {t_str} (duration: {d_str})',1)
             self.bot.clearControlStates('sneak', False)
             self.eatFood()
+        self.activity_last_duration = d_str
         self.bot.stopActivity = True
         self.activity_major = False
 
@@ -115,6 +118,10 @@ class ChatBot:
             message = message[len(self.callsign):]
         elif sender != self.bossPlayer:
             return
+
+        self.handleCommand(message,sender)
+
+    def handleCommand(self, message, sender):
 
         # Handle standard commands
 
@@ -186,6 +193,9 @@ class ChatBot:
             @AsyncTask(start=True)
             def doMoveTo(task):
                 gotoLocation(self.bot,args[0])
+
+        if message == "thomas":
+            self.chat("Hi Thomas!")
 
         if message.startswith('transfer to'):
             args = message[11:].split()
