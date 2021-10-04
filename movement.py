@@ -131,7 +131,7 @@ class MovementManager:
 
         d_inv = Vec3(-d.x,-d.y,-d.z)
 
-        print(f'  bridging {b_gap.displayName} @{v_gap.x}/{v_gap.y}/{v_gap.z} against {b.displayName} @{v.x}/{v.y}/{v.z}')
+        self.pdebug(f'  bridging {b_gap.displayName} @{v_gap.x}/{v_gap.y}/{v_gap.z} against {b.displayName} @{v.x}/{v.y}/{v.z}',2)
 
         self.walkToBlock(v.x,v.y+1,v.z)
         time.sleep(1)

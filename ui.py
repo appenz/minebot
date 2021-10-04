@@ -8,6 +8,7 @@ from tkinter import ttk
 import time
 import datetime
 from javascript import require, On, Once, AsyncTask, once, off
+Vec3     = require('vec3').Vec3
 
 from pybot import PyBot
 from mine import MineBot
@@ -95,7 +96,7 @@ class PyBotWithUI(PyBot):
         if len(items) > 0:
             for i in items:
                 if i not in self.inv_icons:
-                    ttk.Label(self.invUI, text = f'{items[i]:>3} x {i}', width=27, anchor="w").pack(side=tk.TOP, anchor="w", padx=5)
+                    ttk.Label(self.invUI, text = f'{items[i]:>3} x {i}', width=25, anchor="w").pack(side=tk.TOP, anchor="w", padx=5)
             ttk.Separator(self.invUI).pack(side=tk.TOP, padx=10, pady=5, fill="x")
             for i in items:
                 if i in self.inv_icons:
@@ -122,6 +123,45 @@ class PyBotWithUI(PyBot):
         fg_c, bg_c = botlib.colorHelper(oxygen,20)
         o = tk.Label(self.statusUI, text = f'{int(100*oxygen/20):>3}%  Oxygen', background=bg_c, foreground=fg_c,  width=130)
         o.pack(side=tk.TOP, anchor="w", padx=5, pady=1)
+
+    def uiMap(self, blocks):
+        self.map.delete("all")
+        y = 0
+        for x in range(0,13):
+            for z in range(0,13):
+                if blocks[y][x][z]:
+                    self.map.create_rectangle(10+x*14,10+z*14, 10+x*14+14, 10+z*14+14, fill=f'{blocks[y][x][z]}')
+        self.map.create_text(100, 100, text='🤖')
+
+    def refreshMap(self):
+        p = self.bot.entity.position
+
+        blocks = []
+        for x in range(0,13):
+            new = []
+            for z in range(0,13):
+                new.append(0)
+            blocks.append(new)
+
+        for x in range(0,13):
+            for z in range(0,13):
+                v = Vec3(p.x+x-6,p.y+0.3,p.z+z-6)
+                n = self.bot.blockAt(v).displayName
+                if n in ["Air", "Cave Air", "Void Air", "Torch", "Wall Torch", "Rail"]:
+                    blocks[x][z]=0
+                elif n in ["Chest", "Spruce Log"]:
+                    blocks[x][z]="brown"
+                elif n in ["Spruce Leaves"]:
+                    blocks[x][z]="dark green"
+                elif n in ["Wheat Crops"]:
+                    blocks[x][z]="yellow"
+                elif n in ["Lava"]:
+                    blocks[x][z]="red"
+                elif n in ["Water", "Bubble Column"]:
+                    blocks[x][z]="blue"
+                else:
+                    blocks[x][z]="grey"
+        self.uiMap([blocks])
 
     def refreshWorldStatus(self):
 
@@ -190,6 +230,7 @@ class PyBotWithUI(PyBot):
             self.refreshEquipment()
             self.refreshStatus()
             self.refreshInventory()
+            self.refreshMap()
             time.sleep(1)
 
     def initUI(self):
@@ -234,8 +275,13 @@ class PyBotWithUI(PyBot):
 
         # -----------
 
-        self.areaUI = ttk.LabelFrame(win, text='Area')
+        self.areaUI = tk.Frame(win)
         self.areaUI.place(x=240, y=10, width=200, height=400)
+
+        ttk.Label(self.areaUI, text='Area Map').pack(side=tk.TOP,anchor="w")
+
+        self.map = tk.Canvas(self.areaUI, bg="#222", height=200, width=200)
+        self.map.pack(side=tk.TOP)
 
         # -----------
 
@@ -297,6 +343,22 @@ if __name__ == "__main__":
     pybot.uiInventory(items)
 
     pybot.uiStatus(20,15,10)
+
+    blocks = [
+        [
+            [1,1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1,1],
+            [1,1,1,1,1,1,1,1,1],    
+            [1,1,1,1,1,1,1,1,1],
+            [1,1,1,1,0,1,1,1,1],
+            [1,1,1,1,0,1,1,1,1],
+            [1,1,1,1,0,1,1,1,1],
+            [1,1,1,1,0,1,1,1,1],                                
+            [1,1,1,1,0,1,1,1,1],                
+        ],
+    ]
+
+    pybot.uiMap(blocks)
     #pybot.uiEquipment("Stone Pickaxe")
     pybot.refreshActivity(["Test1", "Test2", "Test3"])
 

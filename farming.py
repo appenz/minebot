@@ -51,7 +51,6 @@ class FarmBot:
             self.endActivity()
             return False
         area.restock(self.farmingEquipList)
-        self.eatFood()
 
         # Main loop. Keep farming until told to stop.
 
@@ -66,7 +65,7 @@ class FarmBot:
                 self.refreshActivity(['Harvesting',' ❓ searching for crops'])
                 b = self.findHarvestable(max_range)
                 if b and not self.stopActivity:
-                    self.refreshActivity(['Harvesting',f' ✅ found {b.displayName}'])
+                    self.refreshActivity(['Harvesting',f' ✅ {b.displayName}'])
                     self.walkToBlock(b)
                     self.pdebug(f'  {b.displayName}  ({b.position.x}, {b.position.z}) ',3)
                     try:
@@ -89,7 +88,7 @@ class FarmBot:
                         break
                     self.refreshActivity(['Planting',' ❓ searching for soil'])
                     b = self.findSoil(area.origin,max_range)
-                    self.refreshActivity(['Planting',f' ✅ found empty soil'])
+                    self.refreshActivity(['Planting',f' ✅ empty soil'])
                     if b:
                         self.walkOnBlock(b)
                         if not self.checkInHand(crop):
@@ -113,7 +112,6 @@ class FarmBot:
             # Deposit
             area.walkToStart()
             area.restock(self.farmingEquipList)
-            self.eatFood()
 
             if not self.stopActivity:
                 if long_break < 2:

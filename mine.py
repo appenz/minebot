@@ -359,6 +359,7 @@ class MineBot:
                     name = n
         if name:
             self.pdebug(f'  @{z:3} found {name}    {bx}/{by}',2)
+            area.valuables = name
         return bx, by
 
     def bridgeIfNeeded(self, area, x, z):
@@ -512,6 +513,16 @@ class MineBot:
         time.sleep(0.5)
         return True
 
+    # Helper function for UI
+
+    def rA(self,area,z,txt1="",txt2=""):
+            l = [
+                    f'Depth: {z}    ⏱️ {int(100*(area.blocks_mined-area.last_break)/area.break_interval)}%',
+                    f'Status: {area.status}', 
+                    txt1,
+                    txt2
+                ]
+            self.refreshActivity(l)
 
     #
     #  Build a strip mine of a specific height and width and light it up
@@ -519,7 +530,6 @@ class MineBot:
 
     def stripMine(self,width=3,height=3,valrange=3):
 
-        break_interval = 100  # How often should we take a break to restock
         z_torch = 0
         z =0
         area = workArea(self,width,height,99999)
@@ -527,17 +537,19 @@ class MineBot:
             return False
         self.speedMode = True   # explore fast until we find something
 
+        self.refreshActivity([f'Mining started'])
+
         while not self.stopActivity:
             # Get ready
-
+            self.rA(area,z,"Restocking.")
             area.restock(self.miningEquipList)
             area.last_break = area.blocks_mined
             time.sleep(1)
             if not self.checkMinimumList(self.miningMinimumList):
                 return False
 
-            while area.blocks_mined-area.last_break < break_interval and not self.stopActivity:
-                
+            self.rA(area,z,"Walking back to work")
+            while area.blocks_mined-area.last_break < area.break_interval and not self.stopActivity:
                 if not self.mining_safety_check(area.toWorld(0,0,z)): break
                 area.walkToBlock3(0,0,z-1)
 
@@ -551,6 +563,7 @@ class MineBot:
                     break
 
                 # Step 1 - Mine the main tunnel
+                self.rA(area,z,"Walking back to work", f'Mining main tunnel')
                 for x in area.xRange():
                     self.mineColumn(area, x, z, height)
                     self.floorMine(area, x, z, 2)
@@ -567,17 +580,20 @@ class MineBot:
                 bx, by  = self.findValuables(area, -area.width2-valrange, height+2, z, min_y=-2)
                 by = min(by,height-1)
                 if bx != 0:
+                    self.rA(area, z, f'Found: {area.valuables}✨', f'⬅️ Left side {bx}/{by+1}')
                     self.mineRow(area, bx, by+1, z, floor_mine=2, ceiling_mine=height+2)
                     area.walkToBlock3(0,0,z)
 
                 bx, by  = self.findValuables(area, area.width2+valrange, height+2, z, min_y=-2)
                 by = min(by,height-1)
                 if bx != 0:
+                    self.rA(area, z, f'Found: {area.valuables}✨', f'➡️ Right side {bx}/{by+1}')
                     self.mineRow(area, bx, by+1, z, floor_mine=2, ceiling_mine=height+2)
                     area.walkToBlock3(0,0,z)
 
                 # Step 4 - Light up if needed and move forward by one.
                 if z > z_torch:
+                    self.rA(area, z, f'Placing Torch')
                     # try to place a torch
                     torch_v = area.toWorld(area.width2,1,z)
                     wall_v  = area.toWorld(area.width2+1,1,z)
@@ -589,14 +605,16 @@ class MineBot:
                             self.safePlaceBlock(wall_v,dv)
                         z_torch += 6
                 z += 1
-                
+
             # ...and back to the chest to update sign and restock
             self.speedMode = False
+            self.rA(area, z, f'Walking to Chest')
             area.walkToStart()
             if self.dangerType:
                 s = self.dangerType
             else:
                 s = area.status
+            self.rA(area, z, f'Updating Sign')
             txt = [f'Mine {area.directionStr()} {width}x{height}', f'Length: {z}', myDate(), s ]
             self.updateSign(txt,tryonly=True)
 
@@ -657,19 +675,25 @@ class MineBot:
         else:
             mtype = args[0]
             if mtype == '3x3':
+                self.activity_name = "Mine 3x3"
                 self.stripMine(3,3,5)
             elif mtype == 'tunnel3x3':
+                self.activity_name = "Tunnel 3x3"
                 self.stripMine(3,3,0)
             elif mtype == '5x5':
+                self.activity_name = "Mine 5x5"
                 self.stripMine(5,5,5)
             elif mtype == 'tunnel5x5':
+                self.activity_name = "Tunnel 5x5"
                 self.stripMine(5,5,0)
-            elif mtype == 'fast':
+            elif mtype == 'branch' or mtype == 'fast':
+                self.activity_name = "Branchmine"
                 self.stripMine(1,5,5)
             elif mtype == 'room':
                 if len(args) < 4:
                     self.chat('Try: mine room <length> <width> <height>')
                 else:
+                    self.activity_name = f'Mine {args[1]}x{args[2]}x{args[3]}'
                     self.roomMine(args[1],args[2],args[3])
 
         self.endActivity()

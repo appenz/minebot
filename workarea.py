@@ -20,6 +20,12 @@ class workArea:
     # Initialize a work area
     #
 
+    valuables = None
+    status = "all good"
+    blocks_mined = 0
+    last_break = 0
+    break_interval = 100
+
     def __init__(self,pybot,width,height,depth, notorch=False):
         self.valid = False
         self.pybot = pybot
@@ -33,9 +39,6 @@ class workArea:
         self.height = height
         self.depth = depth
 
-        self.status = "---"
-        self.blocks_mined = 0
-        self.last_break = 0
 
         self.start_chest = pybot.findClosestBlock("Chest",xz_radius=3,y_radius=1)
 
