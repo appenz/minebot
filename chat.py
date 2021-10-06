@@ -116,7 +116,7 @@ class ChatBot:
         if message.startswith(self.callsign):
             print(f'{sender} messaged me "{message}"')
             message = message[len(self.callsign):]
-        elif sender != self.bossPlayer:
+        elif sender != self.bossPlayer():
             return
 
         self.handleCommand(message,sender)
@@ -125,6 +125,7 @@ class ChatBot:
 
         # Handle standard commands
 
+        message = message.lower()
         cmd = message.split()[0]
         args = message.split()[1:]
 
@@ -165,8 +166,9 @@ class ChatBot:
                 self.chat("I don't see you!")
                 return
             pos = target.position
-            #self.bot.pathfinder.setGoal(pathfinder.goals.GoalNear(pos.x, pos.y, pos.z, 1))
-            self.walkTo(pos.x, pos.y, pos.z)
+            @AsyncTask(start=True)
+            def doCome(task):
+                self.walkTo(pos.x, pos.y, pos.z)
 
         if 'follow' in message:
             if message == 'follow':
@@ -193,9 +195,6 @@ class ChatBot:
             @AsyncTask(start=True)
             def doMoveTo(task):
                 gotoLocation(self.bot,args[0])
-
-        if message == "thomas":
-            self.chat("Hi Thomas!")
 
         if message.startswith('transfer to'):
             args = message[11:].split()

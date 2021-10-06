@@ -7,6 +7,7 @@ import tkinter.scrolledtext
 from tkinter import ttk, PhotoImage
 import time
 import datetime
+from functools import partial
 from javascript import require, On, Once, AsyncTask, once, off
 Vec3     = require('vec3').Vec3
 
@@ -102,6 +103,21 @@ class PyBotWithUI(PyBot):
         "Diamond Sword":"🗡️",
     }
 
+    button_mapping = [
+        ["Come here"     , "come"],
+        ["Follow me"     , "follow"],
+        ["Farm Crops"    , "farm"],
+        ["Chop Wood"     , "chop"],
+        ["Deposit All"   , "deposit"],
+        ["STOP!"         , "stop"],
+        ["Mine Fast"     , "mine fast"],
+        ["Mine 3x3"      , "mine 3x3"],
+        ["Mine 5x5"      , "mine 5x5"],
+        ["Mine Room"     , "mine room 5 5 3"],
+        ["Mine Hall"     , "mine room 11 11 5"],
+        ["Mine Shaft"    , "mineshaft 5 10"],
+    ]
+
     def blockToIcon(self,name):
         if name in self.block_icons:
             return self.block_icons[name]
@@ -139,9 +155,6 @@ class PyBotWithUI(PyBot):
     def pdebug(self,message,lvl=4,end=""):
         if self.debug_lvl >= lvl:
             self.logFrame.log(message)
-
-    def do_command(self):
-        print(self.botCmd)
 
     def uiInventory(self, items):
         for widget in self.invUI.winfo_children():
@@ -274,6 +287,9 @@ class PyBotWithUI(PyBot):
             for i in range(0,6):
                 self.activityLine[i].configure(text=lines[i])
 
+    def bossPlayer(self):
+        return self.bossNameVar.get()
+
     def refresherJob(self):
         while True:
             self.refreshActivity(None)
@@ -282,6 +298,12 @@ class PyBotWithUI(PyBot):
             self.refreshInventory()
             self.refreshMap()
             time.sleep(1)
+
+    def do_command(self,cmd):
+        if cmd != "stop":
+            if self.activity_major == True:
+                return False
+        self.handleCommand(cmd, self.bossPlayer())
 
     def initUI(self):
         win = tk.Tk()
@@ -356,23 +378,37 @@ class PyBotWithUI(PyBot):
         self.commandUI = ttk.Frame(win)
         self.commandUI.place(x=10,y=440,width=660,height=100)
 
-        ttk.Button(self.commandUI, text="Go!", command=self.do_command).grid(row=1, column=0, sticky="")
-        ttk.Button(self.commandUI, text="Go!", command=self.do_command).grid(row=1, column=1, sticky="")
-        ttk.Button(self.commandUI, text="Go!", command=self.do_command).grid(row=1, column=2, sticky="")
-        ttk.Button(self.commandUI, text="Go!", command=self.do_command).grid(row=1, column=3, sticky="")
-        ttk.Button(self.commandUI, text="Go!", command=self.do_command).grid(row=1, column=4, sticky="")
-        ttk.Button(self.commandUI, text="Go!", command=self.do_command).grid(row=1, column=5, sticky="")
+        self.commandButton = []
+        but_i = 0
+        for r in range(0,2):
+            self.commandButton.append(None)
+            self.commandButton[r] = []
+            for c in range(0,6):
+                self.commandUI.grid_columnconfigure(c, weight=1)
+                self.commandButton[r].append(None)
+                txt = self.button_mapping[but_i][0]
+                f = partial(self.do_command,self.button_mapping[but_i][1])
+                self.commandButton[r][c] = ttk.Button(self.commandUI, text=txt, command=f)
+                self.commandButton[r][c].grid(row=r, column=c, sticky="we")
+                but_i += 1
 
         self.cmdFrame = ttk.Frame(self.commandUI)
         self.cmdFrame.grid(row=10, column=0, columnspan=30, sticky="we")
 
         self.botCmd = tk.StringVar()
-        ttk.Label(self.cmdFrame, text="General Command:").grid(row=10, column=0,  columnspan = 5,  sticky="W")
-        self.cmdEntry = ttk.Entry(self.cmdFrame, width=20, textvariable=self.botCmd)
-        self.cmdEntry.grid(row=10, column=5, columnspan=20, sticky="EW")
-        ttk.Button(self.cmdFrame, text="Go!", command=self.do_command).grid(row=10, column=25, columnspan=5, sticky="W")
+        ttk.Label(self.cmdFrame, text="Command:").grid(row=1, column=0, sticky="W")
+        self.cmdEntry = ttk.Entry(self.cmdFrame, width=25, textvariable=self.botCmd)
+        self.cmdEntry.grid(row=1, column=1, sticky="EW")
+        ttk.Button(self.cmdFrame, text="Do it!", command=self.do_command).grid(row=1, column=2, sticky="W")
 
+        self.bossNameVar = tk.StringVar()
+        ttk.Label(self.cmdFrame, text="Boss:").grid(row=1, column=4,  sticky="W")
+        self.bossName = ttk.Entry(self.cmdFrame, width=13, textvariable=self.bossNameVar)
+        self.bossName.grid(row=1, column=5, sticky="EW")
+        self.cmdFrame.grid_columnconfigure(3, weight=1)
 
+        if self.account:
+            self.bossNameVar.set(self.account["master"])        
 
         # 20 --------------------------------------------------------------------------------
         

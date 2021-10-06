@@ -33,7 +33,6 @@ class PyBot(ChatBot, FarmBot, MineBot, GatherBot, BuildBot, CombatBot, MovementM
         # This is the Mineflayer bot
         self.bot = None
         self.account = account
-        self.bossPlayer = self.account['master']
         self.callsign = self.account['user'][0:2]+":"
         self.debug_lvl = 3
         self.lastException = None
@@ -127,6 +126,9 @@ class PyBot(ChatBot, FarmBot, MineBot, GatherBot, BuildBot, CombatBot, MovementM
 
     def refreshActivity(self,txt):
         pass
+
+    def bossPlayer(self):
+        return self.account["master"]
 
 #
 # Run the bot. 
