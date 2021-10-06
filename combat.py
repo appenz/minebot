@@ -14,6 +14,7 @@ class CombatBot:
 
     def __init__(self):
         print('combat ', end='')
+        self.healMode = True
 
     def healthCheck(self):
         h = 100*self.bot.health/20

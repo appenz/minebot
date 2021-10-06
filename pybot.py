@@ -164,12 +164,15 @@ if __name__ == "__main__":
 
     @On(pybot.bot, 'chat')
     def onChat(sender, message, this, *rest):
-        pybot.healToFull()
         pybot.handleChat(sender, message, this, *rest)
 
     @On(pybot.bot, 'health')
     def onHealth(arg):
         pybot.healthCheck()
+
+    @AsyncTask(start=True)
+    def asyncInitialHeal(task):
+        pybot.healToFull()
 
     if pybot.debug_lvl >= 4:
         pybot.printInventory()

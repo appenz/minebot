@@ -30,7 +30,7 @@ class Chest:
         elif chesttype == "Minecart with Chest":
             self.object = pybot.bot.nearestEntity(js_Minecart_With_Chest)
             if self.object:
-                if lenVec3(subVec3(self.object.position, self.pybot.bot.entity.position)) > 3:
+                if lenVec3(subVec3(self.object.position, self.pybot.bot.entity.position)) > 2:
                     self.object = None 
             self.chestType = chesttype
         if self.object == None:
@@ -372,6 +372,7 @@ class InventoryManager:
                 break
 
         time.sleep(0.25)
+        self.refreshEquipment()
         if not self.checkInHand(item_name):
             self.perror(f'Wielding item {item_name} failed after max retries!')
             return None

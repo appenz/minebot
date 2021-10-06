@@ -4,7 +4,7 @@
 
 import tkinter as tk
 import tkinter.scrolledtext
-from tkinter import ttk
+from tkinter import ttk, PhotoImage
 import time
 import datetime
 from javascript import require, On, Once, AsyncTask, once, off
@@ -26,7 +26,6 @@ import botlib
 #
 #    Log
 #
-
 
 class LogFrame(tk.Frame):
 
@@ -50,6 +49,26 @@ class LogFrame(tk.Frame):
 
 class PyBotWithUI(PyBot):
 
+    # List means first is color (or None) second is icon
+
+    block_icons = {
+        "Air"           : None,
+        "Cave Air"      : None,
+        "Void Air"      : None,
+        "Torch"         : None,
+        "Wall Torch"    : None,
+        "Redstone Torch": None,
+        "Rail"          : [None,"#"],
+        "Chest"         : ["brown","📦"],
+        "Spruce Log"    : "brown",
+        "Spruce Leaves" : "dark green",
+        "Wheat Crops"   : ["green","🌾"],
+        "Lava"          : "red",
+        "Water"         : "blue", 
+        "Bubble Column" : "blue",
+        "Crafting Table": "brown",
+    }
+
     inv_icons = {
         "Copper Ore":"🪨",
         "Lapis Lazuli":"✨",
@@ -63,6 +82,41 @@ class PyBotWithUI(PyBot):
         "Spruce Sapling":"🌲",
         "Wheat Seeds":"🌿",
     }
+
+    hand_icons = {
+        "Wheat Seeds":"🌿",    
+        "Stone Axe":"🪓",
+        "Iron Axe":"🪓",
+        "Diamond Axe":"🪓",
+        "Stone Pickaxe":"⛏️",
+        "Iron Pickaxe":"⛏️",
+        "Diamond Pickaxe":"⛏️",
+        "Cobblestone":"🪨",
+        "Stone Brick":"🧱",
+        "Bread":"🍞",
+        "Stone Shovel":"⚒️",
+        "Iron Shovel":"⚒️",
+        "Diamond Shovel":"⚒️",
+        "Stone Sword":"🗡️",
+        "Iron Sword":"🗡️",
+        "Diamond Sword":"🗡️",
+    }
+
+    def blockToIcon(self,name):
+        if name in self.block_icons:
+            return self.block_icons[name]
+        else:
+            return "grey"
+
+    def blockToColor(self,name):
+        if name in self.block_icons:
+            l = self.block_icons[name]
+            if type(l) == list:
+                return l[0]
+            else:
+                return l
+        else:
+            return "grey"
 
     def perror(self, message):
         self.logFrame.log(f'*** error: {message}')
@@ -129,9 +183,18 @@ class PyBotWithUI(PyBot):
         y = 0
         for x in range(0,13):
             for z in range(0,13):
-                if blocks[y][x][z]:
-                    self.map.create_rectangle(10+x*14,10+z*14, 10+x*14+14, 10+z*14+14, fill=f'{blocks[y][x][z]}')
+                n = self.blockToIcon(blocks[y][x][z])
+                if n:
+                    if type(n) != list:
+                        self.map.create_rectangle(10+x*14,10+z*14, 10+x*14+14, 10+z*14+14, fill=n)
+                    else:
+                        self.map.create_text(10+x*14+7,10+z*14+7, text=n[1])                        
         self.map.create_text(100, 100, text='🤖')
+
+    def uiEquipment(self,item):
+        if item in self.hand_icons:
+            item = f'✋:  {self.hand_icons[item]} {item}'
+        self.mainHandLabel.configure(text=item)
 
     def refreshMap(self):
         p = self.bot.entity.position
@@ -147,20 +210,8 @@ class PyBotWithUI(PyBot):
             for z in range(0,13):
                 v = Vec3(p.x+x-6,p.y+0.3,p.z+z-6)
                 n = self.bot.blockAt(v).displayName
-                if n in ["Air", "Cave Air", "Void Air", "Torch", "Wall Torch", "Rail"]:
-                    blocks[x][z]=0
-                elif n in ["Chest", "Spruce Log"]:
-                    blocks[x][z]="brown"
-                elif n in ["Spruce Leaves"]:
-                    blocks[x][z]="dark green"
-                elif n in ["Wheat Crops"]:
-                    blocks[x][z]="yellow"
-                elif n in ["Lava"]:
-                    blocks[x][z]="red"
-                elif n in ["Water", "Bubble Column"]:
-                    blocks[x][z]="blue"
-                else:
-                    blocks[x][z]="grey"
+                blocks[x][z] = n
+
         self.uiMap([blocks])
 
     def refreshWorldStatus(self):
@@ -194,8 +245,8 @@ class PyBotWithUI(PyBot):
         self.uiInventory(iList)
 
     def refreshEquipment(self):
-        #i_type, item = self.itemInHand()
-        #self.uiEquipment(item)
+        i_type, item = self.itemInHand()
+        self.uiEquipment(item)
         pass
 
     def refreshStatus(self):
@@ -227,7 +278,6 @@ class PyBotWithUI(PyBot):
         while True:
             self.refreshActivity(None)
             self.refreshWorldStatus()
-            self.refreshEquipment()
             self.refreshStatus()
             self.refreshInventory()
             self.refreshMap()
@@ -262,8 +312,29 @@ class PyBotWithUI(PyBot):
 
         # -
 
+        self.equipmentUI = ttk.LabelFrame(win, text='Equipment')
+        self.equipmentUI.place(x=20, y=230, width=200, height=180)
+
+        self.mainHandLabel = ttk.Label(self.equipmentUI, text = f'Main Hand: empty')
+        self.mainHandLabel.pack(side=tk.TOP, anchor="w", padx=5)
+
+        self.armorLine = [None,None,None,None,None,None]
+        for i in range(0,4):
+            self.armorLine[i] = ttk.Label(self.equipmentUI, text = f'')
+            self.armorLine[i].pack(side=tk.TOP, anchor="w", padx=5)
+
+        # -----------
+
+        self.areaUI = tk.Frame(win)
+        self.areaUI.place(x=240, y=10, width=200, height=200)
+
+        #ttk.Label(self.areaUI, text='Area Map').pack(side=tk.TOP,anchor="w")
+
+        self.map = tk.Canvas(self.areaUI, bg="#222", height=200, width=200)
+        self.map.pack(side=tk.TOP)
+        
         self.activityUI = ttk.LabelFrame(win, text='Activity')
-        self.activityUI.place(x=20, y=230, width=200, height=180)
+        self.activityUI.place(x=240, y=230, width=200, height=180)
 
         self.activityTitleLabel = ttk.Label(self.activityUI, text = f'No Activity')
         self.activityTitleLabel.pack(side=tk.TOP, anchor="w", padx=5)
@@ -272,16 +343,6 @@ class PyBotWithUI(PyBot):
         for i in range(0,6):
             self.activityLine[i] = ttk.Label(self.activityUI, text = f'')
             self.activityLine[i].pack(side=tk.TOP, anchor="w", padx=5)
-
-        # -----------
-
-        self.areaUI = tk.Frame(win)
-        self.areaUI.place(x=240, y=10, width=200, height=400)
-
-        ttk.Label(self.areaUI, text='Area Map').pack(side=tk.TOP,anchor="w")
-
-        self.map = tk.Canvas(self.areaUI, bg="#222", height=200, width=200)
-        self.map.pack(side=tk.TOP)
 
         # -----------
 
@@ -344,22 +405,13 @@ if __name__ == "__main__":
 
     pybot.uiStatus(20,15,10)
 
-    blocks = [
-        [
-            [1,1,1,1,1,1,1,1,1],
-            [1,1,1,1,1,1,1,1,1],
-            [1,1,1,1,1,1,1,1,1],    
-            [1,1,1,1,1,1,1,1,1],
-            [1,1,1,1,0,1,1,1,1],
-            [1,1,1,1,0,1,1,1,1],
-            [1,1,1,1,0,1,1,1,1],
-            [1,1,1,1,0,1,1,1,1],                                
-            [1,1,1,1,0,1,1,1,1],                
-        ],
-    ]
+    blocks = [ [ ["grey"]*13 ] *13 ]
+    blocks[0][6][5] = "Air"
+    blocks[0][6][6] = "Air"
+    blocks[0][6][7] = "Air"
 
     pybot.uiMap(blocks)
-    #pybot.uiEquipment("Stone Pickaxe")
+    pybot.uiEquipment("Stone Pickaxe")
     pybot.refreshActivity(["Test1", "Test2", "Test3"])
 
     a = 1
