@@ -71,17 +71,18 @@ class PyBotWithUI(PyBot):
     }
 
     inv_icons = {
-        "Copper Ore":"🪨",
+        "Copper Ore":"🥉",
         "Lapis Lazuli":"✨",
-        "Iron Ore":"🪨",
-        "Gold Ore":"🪨",
-        "Redstone Ore":"✨",
-        "Diamonds":"💎",
-        "Emeralds":"✨",
+        "Iron Ore":"🪙",
+        "Gold Ore":"✨",
+        "Redstone Ore":"🔴",
+        "Diamond":"💎",
+        "Emerald":"✨",
         "Wheat":"🌽",
         "Spruce Log":"🪵",
         "Spruce Sapling":"🌲",
         "Wheat Seeds":"🌿",
+        "Coal":"🪨",
     }
 
     hand_icons = {

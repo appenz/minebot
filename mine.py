@@ -196,9 +196,9 @@ class MineBot:
     # Assumes the bot is at start
     #
 
-    def minePath(self,start,end,height):
+    def minePath(self,start,end,height, area=None):
 
-        print(start,end,height)
+        #print(start,end,height)
         c = Vec3(start.x, start.y, start.z)
         d = Vec3( (end.x-start.x)/max(abs(end.x-start.x),1), 0, (end.z-start.z)/max(abs(end.z-start.z),1) )
 
@@ -207,7 +207,7 @@ class MineBot:
             # Check if path is safe
             bb = self.bot.blockAt(c.x,c.y-1,c.z)
             if bb.displayName in self.dangerBlocks:
-                print(f'  stopping, dangerous block {bb.displayName} ')
+                self.perror(f'  stopping, dangerous block {bb.displayName} ')
                 return False
 
             # Mine the column. May need a few tries due to gravel
@@ -228,7 +228,9 @@ class MineBot:
 
                 # mine
                 for h in range(0,height):
-                    self.mineBlock( c.x,c.y+h,c.z)
+                    cc = self.mineBlock( c.x,c.y+h,c.z)
+                    if area:
+                        area.blocks_mined += cc
 
                 if wait_t:
                     time.sleep(wait_t)
@@ -236,13 +238,13 @@ class MineBot:
                 for h in range(0,height):
                     b_name = self.bot.blockAt(Vec3(c.x,c.y+h,c.z)).displayName
                     if b_name not in self.ignored_blocks:
-                        print(f'  block not cleared: {b_name}.')
+                        self.pdebug(f'  block not cleared: {b_name}.',2)
                         break
                 else:
                     break
 
             if tries > 30:
-                print("  *** error, can't clear this column.")
+                self.perror("can't clear this column.")
                 self.stopActivity = True
                 return False
 
@@ -252,7 +254,6 @@ class MineBot:
 
             # Check if we are done
             if c.x == end.x and c.z == end.z:
-                #print("  side mining complete")
                 return True
 
             if c.x != end.x:
@@ -272,21 +273,18 @@ class MineBot:
 
         if not dx_max or not dz_max or not height:
             self.chat('Try: mine room <dx 3-99> <dz 3-99> <height 2-8>')
-
-        chest = Chest(self)
-        chest.open()
-
-        if not chest.block:
-            self.perror("Can't find starting position. Place chest wiht materials to place the center.")
             return False
 
-        self.pdebug(f'Mining out area of {2*dx_max+1} x {2*dz_max+1} x {height} blocks.',2)
-        start = chest.block.position
-        chest.restock(self.miningEquipList)
-        chest.close()
-        self.eatFood()
+        area = workArea(self,1,1,1,notorch=True)
+        if not area.valid:
+            return False
+        start = area.start
 
-        for dz in range(0,dz_max+1):
+        self.refreshActivity([f'Room mining started'])
+        self.pdebug(f'Mining out area of {2*dx_max+1} x {2*dz_max+1} x {height} blocks.',2)
+
+        for dz in range(0,dz_max+1):    
+
             todo = False
             for dx in range(-dx_max,dx_max+1):
                 for h in range(0,height):
@@ -302,35 +300,38 @@ class MineBot:
             if not todo:
                 continue
 
+            self.refreshActivity("Restocking.")
+            area.restock(self.miningEquipList)
+            time.sleep(1)
+            if not self.checkMinimumList(self.miningMinimumList):
+                return False
+
             if not self.stopActivity:
 
-                self.pdebug(f'  starting row: +{dz}',2)
-
                 # Carve initial column
-
+                self.refreshActivity( [ f'Blocks Mined: {area.blocks_mined}', f'Row: {dz}' ] )
                 row_c = Vec3(start.x,start.y,start.z+dz)
                 self.pdebug(f'walking to {row_c.x} {row_c.y} {row_c.z}',3)
                 self.walkTo(row_c)
-                self.minePath(row_c,Vec3(row_c.x-dx_max,row_c.y,row_c.z),height)
+                self.minePath(row_c,Vec3(row_c.x-dx_max,row_c.y,row_c.z),height, area=area)
                 self.walkTo(row_c)
-                self.minePath(row_c,Vec3(row_c.x+dx_max,row_c.y,row_c.z),height)
+                self.minePath(row_c,Vec3(row_c.x+dx_max,row_c.y,row_c.z),height, area=area)
 
             if not self.stopActivity:
 
-                self.pdebug(f'  starting row: -{dz}',2)
+                self.refreshActivity( [ f'Blocks Mined: {area.blocks_mined}', f'Row: {dz}' ] )
                 row_c = Vec3(start.x,start.y,start.z-dz)
                 self.walkTo(row_c)
-                self.minePath(row_c,Vec3(row_c.x-dx_max,row_c.y,row_c.z),height)
+                self.minePath(row_c,Vec3(row_c.x-dx_max,row_c.y,row_c.z),height, area=area)
                 self.walkTo(row_c)
-                self.minePath(row_c,Vec3(row_c.x+dx_max,row_c.y,row_c.z),height)
+                self.minePath(row_c,Vec3(row_c.x+dx_max,row_c.y,row_c.z),height, area=area)
 
-            self.safeWalk(start)
-            chest.restock(self.miningEquipList)
-            chest.close()
-            self.eatFood()
 
             if self.stopActivity:
                 break
+
+        # Mining ended
+        area.restock(self.miningEquipList)
 
         return True
 
@@ -372,7 +373,7 @@ class MineBot:
                 if area.blockAt(x,-1,z).displayName not in self.dangerBlocks:
                     break
             else:                            
-                self.perror(f'*** fatal error. Cant bridge dangerous block {b.displayName}')
+                self.perror(f'*** fatal error. Cant bridge dangerous block {area.blockAt(x,-1,z).displayName}')
                 area.status = "blocked/drop"
                 self.stopActivity = True
                 return False
@@ -515,7 +516,7 @@ class MineBot:
 
     # Helper function for UI
 
-    def rA(self,area,z,txt1="",txt2=""):
+    def mineActivity(self,area,z,txt1="",txt2=""):
             l = [
                     f'Depth: {z}    ⏱️ {int(100*(area.blocks_mined-area.last_break)/area.break_interval)}%',
                     f'Status: {area.status}', 
@@ -541,14 +542,14 @@ class MineBot:
 
         while not self.stopActivity:
             # Get ready
-            self.rA(area,z,"Restocking.")
+            self.mineActivity(area,z,"Restocking.")
             area.restock(self.miningEquipList)
             area.last_break = area.blocks_mined
             time.sleep(1)
             if not self.checkMinimumList(self.miningMinimumList):
                 return False
 
-            self.rA(area,z,"Walking back to work")
+            self.mineActivity(area,z,"Walking back to work")
             while area.blocks_mined-area.last_break < area.break_interval and not self.stopActivity:
                 if not self.mining_safety_check(area.toWorld(0,0,z)): break
                 area.walkToBlock3(0,0,z-1)
@@ -563,7 +564,7 @@ class MineBot:
                     break
 
                 # Step 1 - Mine the main tunnel
-                self.rA(area,z,"Walking back to work", f'Mining main tunnel')
+                self.mineActivity(area,z,"Walking back to work", f'Mining main tunnel')
                 for x in area.xRange():
                     self.mineColumn(area, x, z, height)
                     self.floorMine(area, x, z, 2)
@@ -580,20 +581,20 @@ class MineBot:
                 bx, by  = self.findValuables(area, -area.width2-valrange, height+2, z, min_y=-2)
                 by = min(by,height-1)
                 if bx != 0:
-                    self.rA(area, z, f'Found: {area.valuables}✨', f'⬅️ Left side {bx}/{by+1}')
+                    self.mineActivity(area, z, f'Found: {area.valuables}✨', f'⬅️ Left side {bx}/{by+1}')
                     self.mineRow(area, bx, by+1, z, floor_mine=2, ceiling_mine=height+2)
                     area.walkToBlock3(0,0,z)
 
                 bx, by  = self.findValuables(area, area.width2+valrange, height+2, z, min_y=-2)
                 by = min(by,height-1)
                 if bx != 0:
-                    self.rA(area, z, f'Found: {area.valuables}✨', f'➡️ Right side {bx}/{by+1}')
+                    self.mineActivity(area, z, f'Found: {area.valuables}✨', f'➡️ Right side {bx}/{by+1}')
                     self.mineRow(area, bx, by+1, z, floor_mine=2, ceiling_mine=height+2)
                     area.walkToBlock3(0,0,z)
 
                 # Step 4 - Light up if needed and move forward by one.
                 if z > z_torch:
-                    self.rA(area, z, f'Placing Torch')
+                    self.mineActivity(area, z, f'Placing Torch')
                     # try to place a torch
                     torch_v = area.toWorld(area.width2,1,z)
                     wall_v  = area.toWorld(area.width2+1,1,z)
@@ -608,13 +609,13 @@ class MineBot:
 
             # ...and back to the chest to update sign and restock
             self.speedMode = False
-            self.rA(area, z, f'Walking to Chest')
+            self.mineActivity(area, z, f'Walking to Chest')
             area.walkToStart()
             if self.dangerType:
                 s = self.dangerType
             else:
                 s = area.status
-            self.rA(area, z, f'Updating Sign')
+            self.mineActivity(area, z, f'Updating Sign')
             txt = [f'Mine {area.directionStr()} {width}x{height}', f'Length: {z}', myDate(), s ]
             self.updateSign(txt,tryonly=True)
 
@@ -632,17 +633,17 @@ class MineBot:
         start_chest = self.findClosestBlock("Chest",xz_radius=3,y_radius=1)
 
         if not start_chest:
-            print("Can't find starting position. Place chest wiht materials to place the center.")
+            self.perror("Can't find starting position. Place chest wiht materials to place the center.")
             return
 
-        print(f'Mining out area of {2*r+1} x {2*r+1} down to depth z={min_y}.')
+        self.pdebug(f'Mining out area of {2*r+1} x {2*r+1} down to depth z={min_y}.',1)
         start = start_chest.position
         self.restockFromChest(self.miningEquipList)
         self.eatFood()
 
         for y in range(start.y-1,min_y,-1):
 
-            print(f'  layer: {y}')
+            self.pdebug(f'  layer: {y}',2)
 
             for dz in range(0,r+1):
 
@@ -665,7 +666,7 @@ class MineBot:
             if self.stopActivity:
                 break
 
-        print(f'Shaft mining ended at y={y}.')
+        self.pdebug(f'Shaft mining ended at y={y}.',2)
         return True
 
     def doMining(self,args):

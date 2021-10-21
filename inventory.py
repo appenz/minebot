@@ -467,7 +467,7 @@ class InventoryManager:
         # Wield food in hand
         foodname = self.wieldItemFromList(foodList)
         if foodname:
-            print('eating food '+foodname)
+            self.pdebug(f'eating food {foodname}',3)
             self.bot.consume()
             return True
         else:
