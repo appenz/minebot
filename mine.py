@@ -198,14 +198,14 @@ class MineBot:
 
     def minePath(self,start,end,height, area=None):
 
-        #print(start,end,height)
+        self.pdebug(f'minePath({start},{end},{height})',4)
         c = Vec3(start.x, start.y, start.z)
         d = Vec3( (end.x-start.x)/max(abs(end.x-start.x),1), 0, (end.z-start.z)/max(abs(end.z-start.z),1) )
 
         while True:
 
             # Check if path is safe
-            bb = self.bot.blockAt(c.x,c.y-1,c.z)
+            bb = self.blockAt(c.x,c.y-1,c.z)
             if bb.displayName in self.dangerBlocks:
                 self.perror(f'  stopping, dangerous block {bb.displayName} ')
                 return False

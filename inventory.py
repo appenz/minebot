@@ -30,6 +30,7 @@ class Chest:
         elif chesttype == "Minecart with Chest":
             self.object = pybot.bot.nearestEntity(js_Minecart_With_Chest)
             if self.object:
+                # print(self.object, self.pybot.bot.entity)
                 if lenVec3(subVec3(self.object.position, self.pybot.bot.entity.position)) > 2:
                     self.object = None 
             self.chestType = chesttype

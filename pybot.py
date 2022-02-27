@@ -76,9 +76,7 @@ class PyBot(ChatBot, FarmBot, MineBot, GatherBot, BuildBot, CombatBot, MovementM
         print('  modules: ', end='')
         for c in classes[1:]:
             c.__init__(self)
-        print('')
-
-        time.sleep(1)
+        print('.')
 
     # Debug levels: 
     #   0=serious error
@@ -151,6 +149,8 @@ if __name__ == "__main__":
         from ui import PyBotWithUI
         pybot = PyBotWithUI(account.account)
     pybot.pdebug(f'Connected to server {account.account["host"]}.',0)
+    if 'verbose' in argsd:
+        pybot.debug_lvl = argsd['verbose']
 
     # Import list of known locations. Specific to the world.
     if account.locations:

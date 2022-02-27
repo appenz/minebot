@@ -264,7 +264,10 @@ class PyBotWithUI(PyBot):
         pass
 
     def refreshStatus(self):
-        self.uiStatus(self.bot.health, self.bot.food, self.bot.oxygenLevel)
+        o = self.bot.oxygenLevel
+        if not o:
+            o = 100
+        self.uiStatus(self.bot.health, self.bot.food, o)
         pass
 
     def refreshActivity(self, txt):            
@@ -408,7 +411,7 @@ class PyBotWithUI(PyBot):
         self.bossName.grid(row=1, column=5, sticky="EW")
         self.cmdFrame.grid_columnconfigure(3, weight=1)
 
-        if self.account:
+        if hasattr(self,'account'):
             self.bossNameVar.set(self.account["master"])        
 
         # 20 --------------------------------------------------------------------------------
