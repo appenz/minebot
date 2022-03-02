@@ -109,9 +109,9 @@ class MineBot:
         "Sand" : 0,
         "Gravel" : 0,
         "Flint" : 0,
-        "Iron Ore" : 0,
-        "Gold Ore" : 0,
-        "Copper Ore" : 0,
+        "Raw Iron" : 0,
+        "Raw Gold" : 0,
+        "Raw Copper" : 0,
         "Coal" : 0,
         "Redstone Dust" : 0,
         "Diamond" : 0,
@@ -155,14 +155,20 @@ class MineBot:
         
         b = self.bot.blockAt(v)
 
+        self.pdebug(f'    mine block   ({v.x},{v.y},{v.z}) {b.displayName} t:{b.digTime(274)}',3)
 
-        if b.digTime(274) > 100 and b.displayName not in self.ignored_blocks:
+        t = b.digTime(274)
+        if b.displayName:
+            if b.displayName == "Copper Ore":
+                t = 200
+
+        if t > 100 and b.displayName not in self.ignored_blocks:
             # Ok, this looks mineable
             # Try 20 times, in case gravel is dropping down
             for attempts in range(0,20):
                 if not self.mining_safety_check(self.bot.entity.position): return 0
 
-                self.pdebug(f'    mine   ({v.x},{v.y},{v.z}) {b.displayName} t:{b.digTime(274)}',3)
+                self.pdebug(f'    trying to mine',4)
 
                 # Check for the right tool
                 if b.displayName in self.needs_shovel:
@@ -627,47 +633,51 @@ class MineBot:
     # Mine a vertical shaft of N x N down to depth D
     #
 
-    def shaftMine(self,r,min_y):
+    def shaftMine(self,d,min_y):
 
-        # Determine center
-        start_chest = self.findClosestBlock("Chest",xz_radius=3,y_radius=1)
+        r = int( (checkIntArg(d, 1, 99)-1)/2)
+        d = r*2+1
+        min_y = checkIntArg(min_y, -64, 320)
 
-        if not start_chest:
-            self.perror("Can't find starting position. Place chest wiht materials to place the center.")
-            return
+        if r == None or min_y == None:
+            print(r,min_y)
+            self.chat('Try: mine shaft <diameter: 1 to 99> <bottom: -65 to 320>')
+            return False
 
-        self.pdebug(f'Mining out area of {2*r+1} x {2*r+1} down to depth z={min_y}.',1)
-        start = start_chest.position
-        self.restockFromChest(self.miningEquipList)
-        self.eatFood()
+        area = workArea(self,d,d,1,notorch=True)
+        if not area.valid:
+            return False
+        start = area.start
+        area.restock(self.miningEquipList)
 
-        for y in range(start.y-1,min_y,-1):
+        self.refreshActivity([f'Shaft mining started'])
+        self.pdebug(f'Mining vertical shaft of {d} x {d} down to level {min_y}',2)
 
-            self.pdebug(f'  layer: {y}',2)
+        for y in range(0, min_y-start.y-1, -1):
+            for dz in range(0,r+1):    
 
-            for dz in range(0,r+1):
+                if not self.stopActivity:
+                    self.refreshActivity( [ f'Vertical Shaft {d}x{d} to lvl {min_y}',f'Blocks Mined: {area.blocks_mined}', f'Depth: {y}' ] )
+                    area.walkToBlock(0,y,dz)
+                    self.minePath(area.toWorld(0,y,dz),area.toWorld(-r,y,dz),2, area=area)
+                    area.walkToBlock(0,y,dz)
+                    self.minePath(area.toWorld(0,y,dz),area.toWorld( r,y,dz),2, area=area)
 
                 if not self.stopActivity:
 
-                    row_c = Vec3(start.x,y,start.z+dz)
-                    self.safeWalk(row_c,1)
-                    self.minePath(row_c,Vec3(row_c.x-r,row_c.y,row_c.z),2)
-                    self.safeWalk(row_c,1)
-                    self.minePath(row_c,Vec3(row_c.x+r,row_c.y,row_c.z),2)
+                    self.refreshActivity( [ f'Vertical Shaft {d}x{d} to lvl {min_y}',f'Blocks Mined: {area.blocks_mined}', f'Depth: {y}' ] )
+                    area.walkToBlock(0,y,-dz)
+                    self.minePath(area.toWorld(0,y,-dz),area.toWorld(-r,y,-dz),2, area=area)
+                    area.walkToBlock(0,y,-dz)
+                    self.minePath(area.toWorld(0,y,-dz),area.toWorld( r,y,-dz),2, area=area)
 
-                if not self.stopActivity:
+                if self.stopActivity:
+                    break
 
-                    row_c = Vec3(start.x,y,start.z-dz)
-                    self.safeWalk(row_c,1)
-                    self.minePath(row_c,Vec3(row_c.x-r,row_c.y,row_c.z),2)
-                    self.safeWalk(row_c,1)
-                    self.minePath(row_c,Vec3(row_c.x+r,row_c.y,row_c.z),2)
+        # Mining ended - no deposit as we may not be able to get up the shaft
 
-            if self.stopActivity:
-                break
-
-        self.pdebug(f'Shaft mining ended at y={y}.',2)
         return True
+     
 
     def doMining(self,args):
 
@@ -694,8 +704,16 @@ class MineBot:
                 if len(args) < 4:
                     self.chat('Try: mine room <length> <width> <height>')
                 else:
-                    self.activity_name = f'Mine {args[1]}x{args[2]}x{args[3]}'
+                    self.activity_name = f'Mine Room {args[1]}x{args[2]}x{args[3]}'
                     self.roomMine(args[1],args[2],args[3])
+            elif mtype == 'shaft':
+                if len(args) < 3:
+                    self.chat('Try: mine shaft <diameter> <layer of shaft bottom>')
+                    self.activity_name = f'Mine Vertical Shaft {args[1]}x{args[1]} to level {args[2]}'
+                else:
+                    self.shaftMine(args[1],args[2])
+            else:
+                self.chat(f'I don\'t know how to mine a \'{mtype}\'.')
 
         self.endActivity()
         time.sleep(1)

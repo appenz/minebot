@@ -71,11 +71,11 @@ class PyBotWithUI(PyBot):
     }
 
     inv_icons = {
-        "Copper Ore":"🥉",
         "Lapis Lazuli":"✨",
-        "Iron Ore":"🪙",
-        "Gold Ore":"✨",
-        "Redstone Ore":"🔴",
+        "Raw Iron":"🪙",
+        "Raw Copper":"🥉",
+        "Raw Gold":"✨",
+        "Redstone Dust":"🔴",
         "Diamond":"💎",
         "Emerald":"✨",
         "Wheat":"🌽",

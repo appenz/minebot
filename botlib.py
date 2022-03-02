@@ -129,13 +129,13 @@ def rectangleBorder(w,h):
             yield -w,dy
 
 def checkIntArg(x, min, max):
-    if not x.isdigit():
-        return False
+    if not x.lstrip('-').isdigit():
+        return None
     x = int(x)
     if x >= min and x <= max:
         return x
     else:
-        return 0
+        return None
 
 def directionToVector(block):
     m = block.metadata

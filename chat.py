@@ -205,18 +205,4 @@ class ChatBot:
             def doTransfer(task):
                 transferToChest(self.bot,args[0])
 
-        if message.startswith('mineshaft'):
-            args = [int(s) for s in message[9:].split() if s.isdigit()]
-            if len(args) != 2:
-                self.chat('Minebox needs three arguments: radius and max depth.')
-                return
-            if args[0] < 1:
-                self.chat(f'Box radius must be at least 1, is {args[0]}')
-                return
-            if args[1] < 1:
-                self.chat(f'Max depth must be at least 1, is {args[1]}')
-                return
-            @AsyncTask(start=True)
-            def doShaftMine(task):
-                shaftMine(self.bot,args[0],args[1])
 

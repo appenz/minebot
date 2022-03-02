@@ -51,6 +51,10 @@ class workArea:
             p = self.start_chest.getProperties()
             self.d = strDirection(p["facing"])
             self.start = addVec3(self.start_chest.position,self.d)
+
+            # Origin
+            self.origin = self.start
+
         else:
             # Determine "forward" direction from chest+torch
             torch   = pybot.findClosestBlock("Torch",xz_radius=3,y_radius=1)
@@ -78,8 +82,8 @@ class workArea:
 
             self.start = self.start_chest.position
 
-        # Origin
-        self.origin = Vec3(self.start.x+2*self.d.x,self.start.y,self.start.z+2*self.d.z)
+            # Origin
+            self.origin = Vec3(self.start.x+2*self.d.x,self.start.y,self.start.z+2*self.d.z)
 
         # Vector directions
         self.forwardVector = self.d
