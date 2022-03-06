@@ -103,8 +103,6 @@ class BuildBot:
             if not area.valid:                
                 break
 
-            print("Area!")
-
             # Analyze what we need, and what is already there
 
             need= {"Bread":2}
@@ -128,7 +126,8 @@ class BuildBot:
                     pass
 
             if need:
-                self.restockFromChest(need)
+                print(need)
+                area.restock(need)
             else:
                 print("  all needed items already in inventory.")
 
@@ -178,7 +177,7 @@ class BuildBot:
                         elif not spec:
                             # Nothing works, no special instructions
                             print(f'*** error ({x:3},{y:3},{z:3}) {block_type} no placement strategy found')
-                            bot.stopActivity = True
+                            self.stopActivity = True
                             break
 
                         if spec:
