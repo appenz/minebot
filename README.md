@@ -3,6 +3,7 @@
 pybot is a Minecraft bot written using the Mineflayer framework via the Python to Javascript bridge. It is built for practical utility automating such tasks as mining for resources, mining out rooms or long corridors, building bridges, farming, chopping wood, building structures and moving around resources between chests. It has a partially complete UI written in Tk.
 
 Tested with Java Edition 1.16.5.
+It will *NOT* work with 1.18 or 1.19.
 
 ### Authors
 
